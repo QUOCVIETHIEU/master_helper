@@ -311,42 +311,87 @@
               <div class="slider-stack">
                 <label class="slider-field">
                   <div class="slider-field__head">
-                    <span>Motor chạy trực tiếp</span>
-                    <input type="number" value="25" min="0" max="100" step="1" data-mirror="motorDirectPct">
+                    <div class="slider-field__info">
+                      <span class="slider-field__icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M4 12H2M22 12h-4M16.24 7.76l-2.83 2.83M10.59 13.41l-2.83 2.83M7.76 7.76l2.83 2.83M13.41 13.41l2.83 2.83"/></svg>
+                      </span>
+                      <span class="slider-field__title">Motor chạy trực tiếp</span>
+                    </div>
+                    <div class="stepper">
+                      <button type="button" class="stepper__btn stepper__btn--minus" data-step-decrement="motorDirectPct">−</button>
+                      <input type="number" class="stepper__input" value="25" min="0" max="100" step="1" data-mirror="motorDirectPct">
+                      <button type="button" class="stepper__btn stepper__btn--plus" data-step-increment="motorDirectPct">+</button>
+                    </div>
                   </div>
-                  <input type="range" name="motorDirectPct" value="25" min="0" max="100" step="1">
+                  <input type="range" name="motorDirectPct" value="25" min="0" max="100" step="1" class="slider-field__range">
                 </label>
 
                 <label class="slider-field">
                   <div class="slider-field__head">
-                    <span>Biến tần VFD</span>
-                    <input type="number" value="20" min="0" max="100" step="1" data-mirror="vfdPct">
+                    <div class="slider-field__info">
+                      <span class="slider-field__icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12c4-8 8-8 10 0s6 8 10 0"/></svg>
+                      </span>
+                      <span class="slider-field__title">Biến tần VFD</span>
+                    </div>
+                    <div class="stepper">
+                      <button type="button" class="stepper__btn stepper__btn--minus" data-step-decrement="vfdPct">−</button>
+                      <input type="number" class="stepper__input" value="20" min="0" max="100" step="1" data-mirror="vfdPct">
+                      <button type="button" class="stepper__btn stepper__btn--plus" data-step-increment="vfdPct">+</button>
+                    </div>
                   </div>
-                  <input type="range" name="vfdPct" value="20" min="0" max="100" step="1">
+                  <input type="range" name="vfdPct" value="20" min="0" max="100" step="1" class="slider-field__range">
                 </label>
 
                 <label class="slider-field">
                   <div class="slider-field__head">
-                    <span>UPS</span>
-                    <input type="number" value="10" min="0" max="100" step="1" data-mirror="upsPct">
+                    <div class="slider-field__info">
+                      <span class="slider-field__icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="16" height="10" rx="2" ry="2"/><line x1="22" y1="11" x2="22" y2="13"/><line x1="6" y1="12" x2="10" y2="12"/><line x1="8" y1="10" x2="8" y2="14"/></svg>
+                      </span>
+                      <span class="slider-field__title">UPS</span>
+                    </div>
+                    <div class="stepper">
+                      <button type="button" class="stepper__btn stepper__btn--minus" data-step-decrement="upsPct">−</button>
+                      <input type="number" class="stepper__input" value="10" min="0" max="100" step="1" data-mirror="upsPct">
+                      <button type="button" class="stepper__btn stepper__btn--plus" data-step-increment="upsPct">+</button>
+                    </div>
                   </div>
-                  <input type="range" name="upsPct" value="10" min="0" max="100" step="1">
+                  <input type="range" name="upsPct" value="10" min="0" max="100" step="1" class="slider-field__range">
                 </label>
 
                 <label class="slider-field">
                   <div class="slider-field__head">
-                    <span>LED / SMPS / server</span>
-                    <input type="number" value="15" min="0" max="100" step="1" data-mirror="ledPct">
+                    <div class="slider-field__info">
+                      <span class="slider-field__icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A5 5 0 0 0 8 8c0 1 .4 2.5 1.5 3.5.7.8 1.3 1.5 1.5 2.5M9 18h6M10 22h4"/></svg>
+                      </span>
+                      <span class="slider-field__title">LED / SMPS / server</span>
+                    </div>
+                    <div class="stepper">
+                      <button type="button" class="stepper__btn stepper__btn--minus" data-step-decrement="ledPct">−</button>
+                      <input type="number" class="stepper__input" value="15" min="0" max="100" step="1" data-mirror="ledPct">
+                      <button type="button" class="stepper__btn stepper__btn--plus" data-step-increment="ledPct">+</button>
+                    </div>
                   </div>
-                  <input type="range" name="ledPct" value="15" min="0" max="100" step="1">
+                  <input type="range" name="ledPct" value="15" min="0" max="100" step="1" class="slider-field__range">
                 </label>
 
                 <label class="slider-field">
                   <div class="slider-field__head">
-                    <span>Chiller / AHU / bơm / quạt</span>
-                    <input type="number" value="20" min="0" max="100" step="1" data-mirror="hvacPct">
+                    <div class="slider-field__info">
+                      <span class="slider-field__icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.59 4.59A2 2 0 1 1 11 8H2m10.59 11.41A2 2 0 1 0 14 16H2m15.73-8.27A2.5 2.5 0 1 1 19.5 12H2"/></svg>
+                      </span>
+                      <span class="slider-field__title">Chiller / AHU / bơm / quạt</span>
+                    </div>
+                    <div class="stepper">
+                      <button type="button" class="stepper__btn stepper__btn--minus" data-step-decrement="hvacPct">−</button>
+                      <input type="number" class="stepper__input" value="20" min="0" max="100" step="1" data-mirror="hvacPct">
+                      <button type="button" class="stepper__btn stepper__btn--plus" data-step-increment="hvacPct">+</button>
+                    </div>
                   </div>
-                  <input type="range" name="hvacPct" value="20" min="0" max="100" step="1">
+                  <input type="range" name="hvacPct" value="20" min="0" max="100" step="1" class="slider-field__range">
                 </label>
               </div>
             </div>
@@ -356,34 +401,70 @@
               <div class="slider-stack">
                 <label class="slider-field">
                   <div class="slider-field__head">
-                    <span>Chỉnh lưu AC/DC</span>
-                    <input type="number" value="5" min="0" max="100" step="1" data-mirror="rectifierPct">
+                    <div class="slider-field__info">
+                      <span class="slider-field__icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M21 12H3M12 3v18"/></svg>
+                      </span>
+                      <span class="slider-field__title">Chỉnh lưu AC/DC</span>
+                    </div>
+                    <div class="stepper">
+                      <button type="button" class="stepper__btn stepper__btn--minus" data-step-decrement="rectifierPct">−</button>
+                      <input type="number" class="stepper__input" value="5" min="0" max="100" step="1" data-mirror="rectifierPct">
+                      <button type="button" class="stepper__btn stepper__btn--plus" data-step-increment="rectifierPct">+</button>
+                    </div>
                   </div>
-                  <input type="range" name="rectifierPct" value="5" min="0" max="100" step="1">
+                  <input type="range" name="rectifierPct" value="5" min="0" max="100" step="1" class="slider-field__range">
                 </label>
 
                 <label class="slider-field">
                   <div class="slider-field__head">
-                    <span>Máy hàn</span>
-                    <input type="number" value="0" min="0" max="100" step="1" data-mirror="weldingPct">
+                    <div class="slider-field__info">
+                      <span class="slider-field__icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                      </span>
+                      <span class="slider-field__title">Máy hàn</span>
+                    </div>
+                    <div class="stepper">
+                      <button type="button" class="stepper__btn stepper__btn--minus" data-step-decrement="weldingPct">−</button>
+                      <input type="number" class="stepper__input" value="0" min="0" max="100" step="1" data-mirror="weldingPct">
+                      <button type="button" class="stepper__btn stepper__btn--plus" data-step-increment="weldingPct">+</button>
+                    </div>
                   </div>
-                  <input type="range" name="weldingPct" value="0" min="0" max="100" step="1">
+                  <input type="range" name="weldingPct" value="0" min="0" max="100" step="1" class="slider-field__range">
                 </label>
 
                 <label class="slider-field">
                   <div class="slider-field__head">
-                    <span>Lò nhiệt / lò cảm ứng / lò hồ quang</span>
-                    <input type="number" value="0" min="0" max="100" step="1" data-mirror="furnacePct">
+                    <div class="slider-field__info">
+                      <span class="slider-field__icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>
+                      </span>
+                      <span class="slider-field__title">Lò nhiệt / lò cảm ứng</span>
+                    </div>
+                    <div class="stepper">
+                      <button type="button" class="stepper__btn stepper__btn--minus" data-step-decrement="furnacePct">−</button>
+                      <input type="number" class="stepper__input" value="0" min="0" max="100" step="1" data-mirror="furnacePct">
+                      <button type="button" class="stepper__btn stepper__btn--plus" data-step-increment="furnacePct">+</button>
+                    </div>
                   </div>
-                  <input type="range" name="furnacePct" value="0" min="0" max="100" step="1">
+                  <input type="range" name="furnacePct" value="0" min="0" max="100" step="1" class="slider-field__range">
                 </label>
 
                 <label class="slider-field">
                   <div class="slider-field__head">
-                    <span>Tải 1 pha trên tổng tải</span>
-                    <input type="number" value="30" min="0" max="100" step="1" data-mirror="singlePhasePct">
+                    <div class="slider-field__info">
+                      <span class="slider-field__icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="2" x2="12" y2="22"/></svg>
+                      </span>
+                      <span class="slider-field__title">Tải 1 pha trên tổng tải</span>
+                    </div>
+                    <div class="stepper">
+                      <button type="button" class="stepper__btn stepper__btn--minus" data-step-decrement="singlePhasePct">−</button>
+                      <input type="number" class="stepper__input" value="30" min="0" max="100" step="1" data-mirror="singlePhasePct">
+                      <button type="button" class="stepper__btn stepper__btn--plus" data-step-increment="singlePhasePct">+</button>
+                    </div>
                   </div>
-                  <input type="range" name="singlePhasePct" value="30" min="0" max="100" step="1">
+                  <input type="range" name="singlePhasePct" value="30" min="0" max="100" step="1" class="slider-field__range">
                 </label>
               </div>
             </div>

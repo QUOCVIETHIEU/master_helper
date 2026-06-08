@@ -613,6 +613,31 @@ function runAnalysis() {
 
 function init() {
   bindMirrors();
+
+  document.querySelectorAll("[data-step-decrement]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const targetName = btn.dataset.stepDecrement;
+      const rangeInput = form.elements[targetName];
+      if (rangeInput) {
+        const val = clamp(toNumber(rangeInput.value) - 1, 0, 100);
+        rangeInput.value = val;
+        rangeInput.dispatchEvent(new Event("input", { bubbles: true }));
+      }
+    });
+  });
+
+  document.querySelectorAll("[data-step-increment]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const targetName = btn.dataset.stepIncrement;
+      const rangeInput = form.elements[targetName];
+      if (rangeInput) {
+        const val = clamp(toNumber(rangeInput.value) + 1, 0, 100);
+        rangeInput.value = val;
+        rangeInput.dispatchEvent(new Event("input", { bubbles: true }));
+      }
+    });
+  });
+
   syncMirrorsFromForm();
   updateConditionalFields();
 
