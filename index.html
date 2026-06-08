@@ -530,18 +530,8 @@
                 </label>
 
                 <label class="field">
-                  <span>Isc tại điểm đấu nối (kA)</span>
-                  <input type="number" name="iscKa" placeholder="Bỏ trống để tự tính gần đúng" min="0" step="0.1">
-                </label>
-
-                <label class="field">
                   <span>Hệ số sử dụng Ku</span>
                   <input type="number" name="ku" value="0.85" min="0" max="1.5" step="0.01">
-                </label>
-
-                <label class="field">
-                  <span>Dòng tải IL (A)</span>
-                  <input type="number" name="loadCurrentA" placeholder="Bỏ trống để tính từ Ku x In" min="0" step="0.1">
                 </label>
 
                 <label class="field">
@@ -594,6 +584,33 @@
                   <span>Công suất solar inverter (kW)</span>
                   <input type="number" name="solarKw" value="0" min="0" step="1">
                 </label>
+              </div>
+
+              <!-- Auto-calculated Isc & IL box -->
+              <div class="calc-result-box">
+                <div class="calc-result-box__header">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                  <span>Tính Kết Quả Isc &amp; IL</span>
+                  <span class="calc-result-box__badge">Tự động</span>
+                </div>
+                <div class="calc-result-box__body">
+                  <div class="calc-result-item">
+                    <div class="calc-result-item__label">
+                      <span class="calc-result-item__name">Isc tại điểm đấu nối</span>
+                      <span class="calc-result-item__formula">(S &times; n) &divide; (1.73 &times; U &times; Uk%)</span>
+                    </div>
+                    <div class="calc-result-item__value" id="calcIsc">--</div>
+                    <div class="calc-result-item__unit">kA</div>
+                  </div>
+                  <div class="calc-result-item">
+                    <div class="calc-result-item__label">
+                      <span class="calc-result-item__name">Dòng tải IL</span>
+                      <span class="calc-result-item__formula">Ku &times; P &divide; (1.73 &times; U &times; cosφ)</span>
+                    </div>
+                    <div class="calc-result-item__value" id="calcIl">--</div>
+                    <div class="calc-result-item__unit">A</div>
+                  </div>
+                </div>
               </div>
             </div>
           </article>

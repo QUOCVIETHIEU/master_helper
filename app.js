@@ -29,14 +29,14 @@ const PRESET_VALUES = {
 };
 
 const NONLINEAR_WEIGHTS = {
-  motorDirectPct: 0.05,
-  vfdPct: 1,
-  hvacPct: 0.45,
-  upsPct: 1,
-  ledPct: 0.9,
-  rectifierPct: 1,
-  weldingPct: 0.95,
-  furnacePct: 1,
+  motorDirectPct: 0.05,   // Motor trực tiếp: gần tuyến tính
+  vfdPct: 1.0,            // Biến tần VFD: phi tuyến mạnh (6-pulse rectifier)
+  hvacPct: 0.1,           // HVAC: đa số truyền động trực tiếp; VFD-driven đã tính trong vfdPct
+  upsPct: 1.0,            // UPS: phi tuyến mạnh (chuyển mạch)
+  ledPct: 0.3,            // LED/SMPS: phi tuyến nhẹ-vừa (ít nghiêm trọng hơn VFD/UPS)
+  rectifierPct: 1.0,      // Chỉnh lưu AC/DC: phi tuyến mạnh
+  weldingPct: 0.95,       // Máy hàn: phi tuyến rất mạnh
+  furnacePct: 1.0,        // Lò nhiệt / lò cảm ứng: phi tuyến rất mạnh
 };
 
 const STANDARD_CAP_VOLTAGES = [415, 440, 480, 525, 690];
@@ -266,10 +266,10 @@ function readFormData() {
     parallelTransformers: toNumber(result.parallelTransformers, 1),
     transformerKva: toNumber(result.transformerKva),
     ukPercent: toNumber(result.ukPercent),
-    iscKa: toNumber(result.iscKa),
     loadPowerKw: toNumber(result.loadPowerKw),
+    iscKa: 0,
+    loadCurrentA: 0,
     ku: toNumber(result.ku, 1),
-    loadCurrentA: toNumber(result.loadCurrentA),
     cosPhiBefore: toNumber(result.cosPhiBefore),
     cosPhiTarget: toNumber(result.cosPhiTarget),
     hasGenerator: result.hasGenerator === "yes",
@@ -326,24 +326,43 @@ function nonlinearShare(input) {
 
 function predictThdi(input, rules, nonlinearPct) {
   let thdi = rules.baseThdi;
+  let delta = 0;
 
-  if (nonlinearPct < 15) thdi -= 5;
-  else if (nonlinearPct >= 30 && nonlinearPct < 50) thdi += 8;
-  else if (nonlinearPct >= 50 && nonlinearPct < 60) thdi += 15;
-  else if (nonlinearPct >= 60) thdi += 25;
+  // Điều chỉnh theo tỷ lệ tải phi tuyến (Bảng 3.1 tài liệu MASTER)
+  // < 15%: rủi ro thấp  → giảm THDi
+  // 15–25%: trung bình  → giữ nguyên base
+  // 25–40%: cao         → tăng vừa
+  // 40–60%: rất cao     → tăng mạnh
+  // > 60%: cực cao      → tăng rất mạnh
+  if (nonlinearPct < 15) delta -= 5;
+  else if (nonlinearPct < 25) delta += 0;
+  else if (nonlinearPct < 40) delta += 5;
+  else if (nonlinearPct < 60) delta += 10;
+  else delta += 18;
 
-  if (input.vfdPct >= 15 && input.vfdPct < 30) thdi += 3;
-  else if (input.vfdPct >= 30 && input.vfdPct < 50) thdi += 8;
-  else if (input.vfdPct >= 50) thdi += 15;
+  // Điều chỉnh riêng theo VFD (Section 5 – mức rủi ro VFD)
+  // VFD <15%: thấp; 15–30%: trung bình; 30–50%: cao; >50%: rất cao
+  if (input.vfdPct >= 15 && input.vfdPct < 30) delta += 2;
+  else if (input.vfdPct >= 30 && input.vfdPct < 50) delta += 5;
+  else if (input.vfdPct >= 50) delta += 10;
 
-  if (input.upsPct > 20) thdi += 8;
-  if (input.singlePhasePct > 40) thdi += 5;
-  if (input.weldingPct + input.furnacePct > 10) thdi += 15;
-  if (input.rapidFluctuation) thdi += 10;
-  if (input.hasSolar && input.solarKw > 0) thdi += 3;
-  if (input.hasGenerator && input.generatorKva > 0) thdi += 2;
+  // UPS > 20%: tăng mạnh rủi ro (Section 5)
+  if (input.upsPct > 20) delta += 5;
 
-  return clamp(round(thdi, 1), 5, 120);
+  // Tải 1 pha > 40%: hài bậc 3, 9, 15 cộng dồn trên dây trung tính
+  if (input.singlePhasePct > 40) delta += 3;
+
+  // Máy hàn / lò nhiệt / lò cảm ứng: cảnh báo bắt buộc AHF
+  if (input.weldingPct + input.furnacePct > 10) delta += 8;
+
+  if (input.rapidFluctuation) delta += 8;
+  if (input.hasSolar && input.solarKw > 0) delta += 2;
+  if (input.hasGenerator && input.generatorKva > 0) delta += 2;
+
+  // Giới hạn tổng điều chỉnh để tránh tích luỹ quá mức cho cùng loại dự án
+  delta = clamp(delta, -5, 25);
+
+  return clamp(round(thdi + delta, 1), 5, 120);
 }
 
 function predictThdu(thdi, iscKa, ilA) {
@@ -357,18 +376,40 @@ function recommendReactor(thdi, nonlinearPct, input, rules) {
   const heavyProcess = input.weldingPct + input.furnacePct;
   const officeElectronics = input.upsPct + input.ledPct;
 
+  // THDi thấp, tải tuyến tính nhiều → 5.67–6% (tài liệu Bảng 7)
   if (thdi < 15 && nonlinearPct < 15) return "6%";
-  if (heavyProcess > 20 || rules.solutionBias === "14%" || thdi > 35) return "14%";
-  if (officeElectronics > 25 || thdi >= 25) return "13%";
-  if (nonlinearPct >= 20 && nonlinearPct < 25) return "8%";
+
+  // Dự án loại nặng (thép, lò hồ quang) hoặc tải hàn/lò > 20%
+  // hoặc THDi > 40%: bắt buộc 14% (tài liệu mục 4.6)
+  if (rules.solutionBias === "14%" || heavyProcess > 20 || thdi > 40) return "14%";
+
+  // THDi 35–40%: cuộn kháng 14%, cân nhắc AHF (tài liệu Bảng giải pháp)
+  if (thdi >= 35) return "14%";
+
+  // THDi 25–35% kết hợp VFD cao hoặc hàn/lò đáng kể → 14%
+  // (tài liệu: THDi 25–40%, VFD cao, hàn, luyện kim → 14%)
+  if (thdi >= 25 && (input.vfdPct >= 30 || heavyProcess > 10)) return "14%";
+
+  // THDi 15–35%, nhiều UPS/LED/VFD/SMPS → 13% (tài liệu Bảng 7)
+  if (officeElectronics > 25 || thdi >= 25 || nonlinearPct >= 25) return "13%";
+
+  // Cần bảo vệ tụ tốt hơn 7% → 8% (tài liệu Bảng 7)
+  if (nonlinearPct >= 20) return "8%";
+
+  // THDi 10–25%, H5 chiếm ưu thế → 7% (tài liệu Bảng 7)
   return "7%";
 }
 
 function recommendSolution(thdi, reactorPct, ahfNeeded) {
+  // > 40%: AHF/SVG bắt buộc (tài liệu Bảng giải pháp)
   if (ahfNeeded || thdi > 40) return `AHF/SVG + tụ bù có cuộn kháng ${reactorPct}`;
-  if (thdi > 35) return `Tụ bù + cuộn kháng ${reactorPct}, cân nhắc AHF`;
-  if (thdi > 25) return `Tụ bù + cuộn kháng ${reactorPct}`;
-  if (thdi > 15) return `Tụ bù + cuộn kháng ${reactorPct}`;
+  // 35–40%: cuộn kháng 14%, cân nhắc AHF
+  if (thdi >= 35) return `Tụ bù + cuộn kháng ${reactorPct}, cân nhắc AHF`;
+  // 25–35%: cuộn kháng 13%
+  if (thdi >= 25) return `Tụ bù + cuộn kháng ${reactorPct}`;
+  // 15–25%: cuộn kháng 7% hoặc 8%
+  if (thdi >= 15) return `Tụ bù + cuộn kháng ${reactorPct}`;
+  // < 15%: tụ thường hoặc cuộn kháng 6%
   return "Tụ bù thường hoặc tụ bù + cuộn kháng 6%";
 }
 
@@ -490,8 +531,12 @@ function computeReport(input) {
   const rules = PROJECT_RULES[input.projectType];
   const totalTransformerKva = input.transformerKva * Math.max(input.parallelTransformers, 1);
   const inA = transformerCurrentA(totalTransformerKva, input.ratedVoltage);
-  const ilA = input.loadCurrentA > 0 ? input.loadCurrentA : input.ku * inA;
-  const iscKa = input.iscKa > 0 ? input.iscKa : estimateIscKa(inA, input.ukPercent);
+  const ilA = (input.loadPowerKw > 0 && input.cosPhiBefore > 0)
+    ? (input.ku * input.loadPowerKw * 1000) / (Math.sqrt(3) * input.ratedVoltage * input.cosPhiBefore)
+    : input.ku * inA;
+  const iscKa = (totalTransformerKva > 0 && input.ratedVoltage > 0 && input.ukPercent > 0)
+    ? totalTransformerKva / (Math.sqrt(3) * input.ratedVoltage * (input.ukPercent / 100))
+    : estimateIscKa(inA, input.ukPercent);
   const shortCircuitRatio = iscKa > 0 ? (iscKa * 1000) / Math.max(ilA, 1) : 0;
   const baseCompKvar = totalTransformerKva * rules.baseComp;
   const cosCompKvar = compensationByCosphi(input.loadPowerKw, input.cosPhiBefore, input.cosPhiTarget);
@@ -564,6 +609,12 @@ function renderReport(report) {
 
   document.getElementById("sidebarThdi").textContent = formatNumber(report.thdi, 1, "%");
   document.getElementById("sidebarSolution").textContent = report.solution;
+
+  // Cập nhật hiển thị Isc & IL tự tính
+  const calcIscEl = document.getElementById("calcIsc");
+  const calcIlEl = document.getElementById("calcIl");
+  if (calcIscEl) calcIscEl.textContent = formatNumber(report.iscKa, 2);
+  if (calcIlEl) calcIlEl.textContent = formatNumber(report.ilA, 1);
   document.getElementById("summaryMbaKvar").textContent = formatNumber(report.baseCompKvar, 1, "kVAr");
   document.getElementById("summaryCosKvar").textContent = formatNumber(report.cosCompKvar, 1, "kVAr");
   document.getElementById("summaryTotalKvar").textContent = formatNumber(report.totalKvar, 1, "kVAr");
