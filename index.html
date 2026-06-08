@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MASTER Helper | Tính toán tụ bù, cuộn kháng, AHF</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./assets/style.css">
+</head>
+<body>
+  <div class="page-shell">
+    <header class="hero">
+      <div class="hero__brand">
+        <img src="./assets/logo.png" alt="MASTER logo" class="hero__logo" id="brandLogo">
+        <div>
+          <p class="eyebrow">Phần mềm gợi ý giải pháp tụ bù</p>
+          <h1>MASTER Capacitor, Reactor & AHF Advisor</h1>
+          <p class="hero__lead">
+            Khai báo thông số hệ thống, phân bố tải và mục tiêu cosphi để nhận đề xuất công suất bù,
+            cuộn kháng, AHF và cảnh báo kỹ thuật có giải thích rõ nguyên nhân.
+          </p>
+        </div>
+      </div>
+      <div class="hero__meta">
+        <div class="metric-chip">
+          <span>THDi dự đoán</span>
+          <strong id="heroThdi">--</strong>
+        </div>
+        <div class="metric-chip">
+          <span>Giải pháp sơ bộ</span>
+          <strong id="heroSolution">--</strong>
+        </div>
+      </div>
+    </header>
+
+    <main class="layout">
+      <section class="form-column">
+        <form id="analysisForm" class="stack">
+          <article class="panel">
+            <div class="panel__header">
+              <div>
+                <p class="panel__eyebrow">Nhóm 1</p>
+                <h2>Thông tin hệ thống điện</h2>
+              </div>
+              <p class="panel__hint">Nhập các thông số nền tảng để phần mềm tính dòng danh định mức, ngắn mạch và công suất bù.</p>
+            </div>
+
+            <div class="grid grid--2">
+              <label class="field">
+                <span>Loại công trình</span>
+                <select name="projectType" required>
+                  <option value="nha-o">Nhà ở, chung cư để ở</option>
+                  <option value="building">Building văn phòng</option>
+                  <option value="thuong-mai">Trung tâm thương mại</option>
+                  <option value="data-center">Data center</option>
+                  <option value="server-room">Phòng server lớn</option>
+                  <option value="co-khi">Nhà máy cơ khí thông thường</option>
+                  <option value="nhua-bao-bi">Nhà máy nhựa, bao bì</option>
+                  <option value="det-may">Nhà máy dệt, may</option>
+                  <option value="thuc-pham">Nhà máy thực phẩm, thủy sản</option>
+                  <option value="xi-mang">Nhà máy xi măng, khai khoáng</option>
+                  <option value="thep">Nhà máy thép, luyện kim</option>
+                  <option value="lo-ho-quang">Lò hồ quang, lò cảm ứng lớn</option>
+                </select>
+              </label>
+
+              <label class="field">
+                <span>Phương pháp bù</span>
+                <select name="compensationMethod">
+                  <option value="tap-trung">Bù tập trung</option>
+                  <option value="theo-nhom">Bù nhóm</option>
+                  <option value="rieng-le">Bù riêng lẻ</option>
+                </select>
+              </label>
+
+              <label class="field">
+                <span>Điện áp định mức (V)</span>
+                <select name="ratedVoltage">
+                  <option value="380">380</option>
+                  <option value="400" selected>400</option>
+                  <option value="415">415</option>
+                  <option value="440">440</option>
+                  <option value="480">480</option>
+                </select>
+              </label>
+
+              <label class="field">
+                <span>Tần số (Hz)</span>
+                <select name="frequency">
+                  <option value="50" selected>50</option>
+                  <option value="60">60</option>
+                </select>
+              </label>
+
+              <label class="field">
+                <span>Sơ đồ điện</span>
+                <select name="wiring">
+                  <option value="3P3W">3P3W</option>
+                  <option value="3P4W" selected>3P4W</option>
+                </select>
+              </label>
+
+              <label class="field">
+                <span>Số MBA vận hành song song</span>
+                <input type="number" name="parallelTransformers" value="1" min="1" step="1">
+              </label>
+
+              <label class="field">
+                <span>Công suất 1 MBA (kVA)</span>
+                <input type="number" name="transformerKva" value="1000" min="0" step="1" required>
+              </label>
+
+              <label class="field">
+                <span>Uk% MBA</span>
+                <input type="number" name="ukPercent" value="6" min="0" step="0.1">
+              </label>
+
+              <label class="field">
+                <span>Isc tại điểm đấu nối (kA)</span>
+                <input type="number" name="iscKa" placeholder="Bỏ trống để tự tính gần đúng" min="0" step="0.1">
+              </label>
+
+              <label class="field">
+                <span>Công suất tải tổng (kW)</span>
+                <input type="number" name="loadPowerKw" value="850" min="0" step="1" required>
+              </label>
+
+              <label class="field">
+                <span>Hệ số sử dụng Ku</span>
+                <input type="number" name="ku" value="0.85" min="0" max="1.5" step="0.01">
+              </label>
+
+              <label class="field">
+                <span>Dòng tải IL (A)</span>
+                <input type="number" name="loadCurrentA" placeholder="Bỏ trống để tính từ Ku x In" min="0" step="0.1">
+              </label>
+
+              <label class="field">
+                <span>cosphi trước bù</span>
+                <input type="number" name="cosPhiBefore" value="0.84" min="0.4" max="1" step="0.01">
+              </label>
+
+              <label class="field">
+                <span>cosphi mục tiêu</span>
+                <input type="number" name="cosPhiTarget" value="0.96" min="0.8" max="1" step="0.01">
+              </label>
+
+              <label class="field field--toggle">
+                <span>Có máy phát</span>
+                <select name="hasGenerator">
+                  <option value="no" selected>Không</option>
+                  <option value="yes">Có</option>
+                </select>
+              </label>
+
+              <label class="field">
+                <span>Công suất máy phát (kVA)</span>
+                <input type="number" name="generatorKva" value="0" min="0" step="1">
+              </label>
+
+              <label class="field field--toggle">
+                <span>Có solar inverter</span>
+                <select name="hasSolar">
+                  <option value="no" selected>Không</option>
+                  <option value="yes">Có</option>
+                </select>
+              </label>
+
+              <label class="field">
+                <span>Công suất solar inverter (kW)</span>
+                <input type="number" name="solarKw" value="0" min="0" step="1">
+              </label>
+            </div>
+          </article>
+
+          <article class="panel">
+            <div class="panel__header">
+              <div>
+                <p class="panel__eyebrow">Nhóm 2</p>
+                <h2>Phân bố tải và nguồn sinh hài</h2>
+              </div>
+              <p class="panel__hint">Nhập tỷ lệ trên tổng tải. Các nhóm được gom theo mức độ gây sóng hài để dễ thao tác và kiểm soát.</p>
+            </div>
+
+            <div class="subpanel">
+              <h3>Tải động lực và điều khiển</h3>
+              <div class="grid grid--3">
+                <label class="field">
+                  <span>Motor chạy trực tiếp (%)</span>
+                  <input type="number" name="motorDirectPct" value="25" min="0" max="100" step="1">
+                </label>
+                <label class="field">
+                  <span>Biến tần VFD (%)</span>
+                  <input type="number" name="vfdPct" value="20" min="0" max="100" step="1">
+                </label>
+                <label class="field">
+                  <span>Chiller / AHU / bơm / quạt (%)</span>
+                  <input type="number" name="hvacPct" value="20" min="0" max="100" step="1">
+                </label>
+              </div>
+            </div>
+
+            <div class="subpanel">
+              <h3>Tải điện tử và văn phòng</h3>
+              <div class="grid grid--3">
+                <label class="field">
+                  <span>UPS (%)</span>
+                  <input type="number" name="upsPct" value="10" min="0" max="100" step="1">
+                </label>
+                <label class="field">
+                  <span>LED / SMPS / server (%)</span>
+                  <input type="number" name="ledPct" value="15" min="0" max="100" step="1">
+                </label>
+                <label class="field">
+                  <span>Tải 1 pha trên tổng tải (%)</span>
+                  <input type="number" name="singlePhasePct" value="30" min="0" max="100" step="1">
+                </label>
+              </div>
+            </div>
+
+            <div class="subpanel">
+              <h3>Tải công nghiệp phi tuyến nặng</h3>
+              <div class="grid grid--3">
+                <label class="field">
+                  <span>Chỉnh lưu AC/DC (%)</span>
+                  <input type="number" name="rectifierPct" value="5" min="0" max="100" step="1">
+                </label>
+                <label class="field">
+                  <span>Máy hàn (%)</span>
+                  <input type="number" name="weldingPct" value="0" min="0" max="100" step="1">
+                </label>
+                <label class="field">
+                  <span>Lò nhiệt / lò cảm ứng / lò hồ quang (%)</span>
+                  <input type="number" name="furnacePct" value="0" min="0" max="100" step="1">
+                </label>
+              </div>
+            </div>
+
+            <div class="grid grid--3">
+              <label class="field">
+                <span>Số xung chỉnh lưu chính</span>
+                <select name="rectifierPulse">
+                  <option value="0">Không đáng kể</option>
+                  <option value="6" selected>6 pulse</option>
+                  <option value="12">12 pulse</option>
+                  <option value="18">18 pulse</option>
+                </select>
+              </label>
+              <label class="field">
+                <span>Tải biến động nhanh</span>
+                <select name="rapidFluctuation">
+                  <option value="no" selected>Không</option>
+                  <option value="yes">Có</option>
+                </select>
+              </label>
+              <label class="field">
+                <span>Thời gian vận hành (giờ/ngày)</span>
+                <input type="number" name="operatingHours" value="16" min="0" max="24" step="1">
+              </label>
+            </div>
+          </article>
+
+          <div class="actions">
+            <button type="submit" class="button button--primary">Phân tích giải pháp</button>
+            <button type="button" id="exportPdfButton" class="button button--ghost">Xuất báo cáo PDF</button>
+          </div>
+        </form>
+      </section>
+
+      <aside class="result-column">
+        <section class="panel panel--sticky">
+          <div class="panel__header">
+            <div>
+              <p class="panel__eyebrow">Kết quả</p>
+              <h2>Đề xuất tổng hợp</h2>
+            </div>
+            <p class="panel__hint">Kết quả cập nhật ngay sau mỗi lần thay đổi hoặc bấm phân tích.</p>
+          </div>
+
+          <div class="summary-grid">
+            <div class="summary-card">
+              <span>Công suất bù theo MBA</span>
+              <strong id="summaryMbaKvar">--</strong>
+            </div>
+            <div class="summary-card">
+              <span>Nhu cầu bù theo cosphi</span>
+              <strong id="summaryCosKvar">--</strong>
+            </div>
+            <div class="summary-card">
+              <span>Dung lượng đề xuất</span>
+              <strong id="summaryTotalKvar">--</strong>
+            </div>
+            <div class="summary-card">
+              <span>Cuộn kháng</span>
+              <strong id="summaryReactor">--</strong>
+            </div>
+            <div class="summary-card">
+              <span>AHF</span>
+              <strong id="summaryAhf">--</strong>
+            </div>
+            <div class="summary-card">
+              <span>Điện áp tụ</span>
+              <strong id="summaryCapVoltage">--</strong>
+            </div>
+          </div>
+
+          <div class="result-block">
+            <h3>Chi tiết phân tích</h3>
+            <div id="analysisNarrative" class="narrative"></div>
+          </div>
+
+          <div class="result-block">
+            <h3>Cảnh báo kỹ thuật</h3>
+            <div id="warningsList" class="warnings"></div>
+          </div>
+
+          <div class="result-block">
+            <h3>Bậc hài dự đoán</h3>
+            <div id="harmonicList" class="harmonic-list"></div>
+          </div>
+        </section>
+      </aside>
+    </main>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+  <script src="./app.js"></script>
+</body>
+</html>
