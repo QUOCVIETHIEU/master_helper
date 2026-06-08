@@ -14,18 +14,18 @@ const PROJECT_RULES = {
 };
 
 const PRESET_VALUES = {
-  "nha-o": { transformerKva: 750, loadPowerKw: 500, cosPhiBefore: 0.86, cosPhiTarget: 0.96, motorDirectPct: 12, vfdPct: 12, upsPct: 4, ledPct: 18, hvacPct: 16, rectifierPct: 2, weldingPct: 0, furnacePct: 0, singlePhasePct: 55 },
-  "building": { transformerKva: 1000, loadPowerKw: 850, cosPhiBefore: 0.84, cosPhiTarget: 0.96, motorDirectPct: 18, vfdPct: 18, upsPct: 12, ledPct: 18, hvacPct: 22, rectifierPct: 4, weldingPct: 0, furnacePct: 0, singlePhasePct: 35 },
-  "thuong-mai": { transformerKva: 1250, loadPowerKw: 980, cosPhiBefore: 0.83, cosPhiTarget: 0.96, motorDirectPct: 12, vfdPct: 20, upsPct: 10, ledPct: 20, hvacPct: 24, rectifierPct: 5, weldingPct: 0, furnacePct: 0, singlePhasePct: 45 },
-  "data-center": { transformerKva: 1600, loadPowerKw: 1200, cosPhiBefore: 0.9, cosPhiTarget: 0.98, motorDirectPct: 5, vfdPct: 12, upsPct: 32, ledPct: 18, hvacPct: 18, rectifierPct: 10, weldingPct: 0, furnacePct: 0, singlePhasePct: 28 },
-  "server-room": { transformerKva: 1000, loadPowerKw: 700, cosPhiBefore: 0.89, cosPhiTarget: 0.98, motorDirectPct: 5, vfdPct: 10, upsPct: 28, ledPct: 16, hvacPct: 20, rectifierPct: 8, weldingPct: 0, furnacePct: 0, singlePhasePct: 25 },
-  "co-khi": { transformerKva: 1250, loadPowerKw: 950, cosPhiBefore: 0.82, cosPhiTarget: 0.95, motorDirectPct: 28, vfdPct: 16, upsPct: 2, ledPct: 6, hvacPct: 10, rectifierPct: 6, weldingPct: 10, furnacePct: 0, singlePhasePct: 12 },
-  "nhua-bao-bi": { transformerKva: 1600, loadPowerKw: 1300, cosPhiBefore: 0.8, cosPhiTarget: 0.95, motorDirectPct: 14, vfdPct: 28, upsPct: 2, ledPct: 5, hvacPct: 12, rectifierPct: 8, weldingPct: 3, furnacePct: 12, singlePhasePct: 10 },
-  "det-may": { transformerKva: 1250, loadPowerKw: 980, cosPhiBefore: 0.81, cosPhiTarget: 0.95, motorDirectPct: 18, vfdPct: 24, upsPct: 2, ledPct: 10, hvacPct: 12, rectifierPct: 4, weldingPct: 0, furnacePct: 3, singlePhasePct: 18 },
-  "thuc-pham": { transformerKva: 1250, loadPowerKw: 990, cosPhiBefore: 0.82, cosPhiTarget: 0.95, motorDirectPct: 18, vfdPct: 22, upsPct: 3, ledPct: 7, hvacPct: 20, rectifierPct: 5, weldingPct: 0, furnacePct: 5, singlePhasePct: 15 },
-  "xi-mang": { transformerKva: 2000, loadPowerKw: 1600, cosPhiBefore: 0.81, cosPhiTarget: 0.95, motorDirectPct: 24, vfdPct: 22, upsPct: 2, ledPct: 4, hvacPct: 8, rectifierPct: 8, weldingPct: 6, furnacePct: 6, singlePhasePct: 8 },
-  "thep": { transformerKva: 2500, loadPowerKw: 2100, cosPhiBefore: 0.78, cosPhiTarget: 0.95, motorDirectPct: 12, vfdPct: 20, upsPct: 2, ledPct: 3, hvacPct: 6, rectifierPct: 14, weldingPct: 16, furnacePct: 18, singlePhasePct: 6 },
-  "lo-ho-quang": { transformerKva: 3000, loadPowerKw: 2500, cosPhiBefore: 0.76, cosPhiTarget: 0.95, motorDirectPct: 8, vfdPct: 16, upsPct: 1, ledPct: 2, hvacPct: 4, rectifierPct: 15, weldingPct: 14, furnacePct: 24, singlePhasePct: 4 },
+  "nha-o": { transformerKva: 750, loadPowerKw: 500, cosPhiBefore: 0.86, cosPhiTarget: 0.96, motorDirectPct: 19, vfdPct: 19, upsPct: 6, ledPct: 28, hvacPct: 25, rectifierPct: 3, weldingPct: 0, furnacePct: 0, singlePhasePct: 55 },
+  "building": { transformerKva: 1000, loadPowerKw: 850, cosPhiBefore: 0.84, cosPhiTarget: 0.96, motorDirectPct: 20, vfdPct: 20, upsPct: 12, ledPct: 20, hvacPct: 24, rectifierPct: 4, weldingPct: 0, furnacePct: 0, singlePhasePct: 35 },
+  "thuong-mai": { transformerKva: 1250, loadPowerKw: 980, cosPhiBefore: 0.83, cosPhiTarget: 0.96, motorDirectPct: 14, vfdPct: 22, upsPct: 10, ledPct: 22, hvacPct: 26, rectifierPct: 6, weldingPct: 0, furnacePct: 0, singlePhasePct: 45 },
+  "data-center": { transformerKva: 1600, loadPowerKw: 1200, cosPhiBefore: 0.9, cosPhiTarget: 0.98, motorDirectPct: 5, vfdPct: 12, upsPct: 35, ledPct: 20, hvacPct: 18, rectifierPct: 10, weldingPct: 0, furnacePct: 0, singlePhasePct: 28 },
+  "server-room": { transformerKva: 1000, loadPowerKw: 700, cosPhiBefore: 0.89, cosPhiTarget: 0.98, motorDirectPct: 5, vfdPct: 12, upsPct: 32, ledPct: 20, hvacPct: 23, rectifierPct: 8, weldingPct: 0, furnacePct: 0, singlePhasePct: 25 },
+  "co-khi": { transformerKva: 1250, loadPowerKw: 950, cosPhiBefore: 0.82, cosPhiTarget: 0.95, motorDirectPct: 34, vfdPct: 20, upsPct: 2, ledPct: 6, hvacPct: 12, rectifierPct: 8, weldingPct: 18, furnacePct: 0, singlePhasePct: 12 },
+  "nhua-bao-bi": { transformerKva: 1600, loadPowerKw: 1300, cosPhiBefore: 0.8, cosPhiTarget: 0.95, motorDirectPct: 16, vfdPct: 32, upsPct: 2, ledPct: 5, hvacPct: 15, rectifierPct: 10, weldingPct: 5, furnacePct: 15, singlePhasePct: 10 },
+  "det-may": { transformerKva: 1250, loadPowerKw: 980, cosPhiBefore: 0.81, cosPhiTarget: 0.95, motorDirectPct: 24, vfdPct: 32, upsPct: 2, ledPct: 12, hvacPct: 18, rectifierPct: 6, weldingPct: 0, furnacePct: 6, singlePhasePct: 18 },
+  "thuc-pham": { transformerKva: 1250, loadPowerKw: 990, cosPhiBefore: 0.82, cosPhiTarget: 0.95, motorDirectPct: 22, vfdPct: 28, upsPct: 3, ledPct: 8, hvacPct: 24, rectifierPct: 7, weldingPct: 0, furnacePct: 8, singlePhasePct: 15 },
+  "xi-mang": { transformerKva: 2000, loadPowerKw: 1600, cosPhiBefore: 0.81, cosPhiTarget: 0.95, motorDirectPct: 28, vfdPct: 28, upsPct: 2, ledPct: 5, hvacPct: 10, rectifierPct: 11, weldingPct: 8, furnacePct: 8, singlePhasePct: 8 },
+  "thep": { transformerKva: 2500, loadPowerKw: 2100, cosPhiBefore: 0.78, cosPhiTarget: 0.95, motorDirectPct: 14, vfdPct: 22, upsPct: 2, ledPct: 3, hvacPct: 7, rectifierPct: 16, weldingPct: 18, furnacePct: 18, singlePhasePct: 6 },
+  "lo-ho-quang": { transformerKva: 3000, loadPowerKw: 2500, cosPhiBefore: 0.76, cosPhiTarget: 0.95, motorDirectPct: 10, vfdPct: 20, upsPct: 1, ledPct: 2, hvacPct: 5, rectifierPct: 18, weldingPct: 18, furnacePct: 26, singlePhasePct: 4 },
 };
 
 const NONLINEAR_WEIGHTS = {
@@ -128,6 +128,84 @@ function applyProjectPreset(projectType) {
   runAnalysis();
 }
 
+let adjustingLoad = false;
+
+function adjustLoads(changedKey, newValue) {
+  if (adjustingLoad) return;
+  adjustingLoad = true;
+
+  try {
+    const loadKeys = ["motorDirectPct", "vfdPct", "hvacPct", "upsPct", "ledPct", "rectifierPct", "weldingPct", "furnacePct"];
+    if (!loadKeys.includes(changedKey)) return;
+
+    newValue = clamp(Math.round(newValue), 0, 100);
+    
+    const values = {};
+    loadKeys.forEach(key => {
+      const el = form.elements[key];
+      values[key] = el ? parseInt(el.value, 10) || 0 : 0;
+    });
+
+    values[changedKey] = newValue;
+
+    const otherKeys = loadKeys.filter(k => k !== changedKey);
+    const otherSum = otherKeys.reduce((s, k) => s + values[k], 0);
+    const targetOtherSum = 100 - newValue;
+
+    if (targetOtherSum <= 0) {
+      otherKeys.forEach(k => { values[k] = 0; });
+    } else if (otherSum === 0) {
+      const share = Math.floor(targetOtherSum / otherKeys.length);
+      let remainder = targetOtherSum - share * otherKeys.length;
+      otherKeys.forEach((k, idx) => {
+        values[k] = share + (idx < remainder ? 1 : 0);
+      });
+    } else {
+      let currentSum = 0;
+      const proposed = {};
+      otherKeys.forEach(k => {
+        const val = Math.round((values[k] / otherSum) * targetOtherSum);
+        proposed[k] = val;
+        currentSum += val;
+      });
+
+      let remainder = targetOtherSum - currentSum;
+      if (remainder !== 0) {
+        const sorted = [...otherKeys].sort((a, b) => proposed[b] - proposed[a]);
+        const step = remainder > 0 ? 1 : -1;
+        let idx = 0;
+        while (remainder !== 0) {
+          const k = sorted[idx % sorted.length];
+          if (proposed[k] + step >= 0 && proposed[k] + step <= 100) {
+            proposed[k] += step;
+            remainder -= step;
+          }
+          idx++;
+          if (idx > 100) break;
+        }
+      }
+
+      otherKeys.forEach(k => {
+        values[k] = proposed[k];
+      });
+    }
+
+    loadKeys.forEach(key => {
+      const rangeEl = form.elements[key];
+      if (rangeEl) {
+        rangeEl.value = values[key];
+      }
+      const numberEl = [...mirroredInputs].find(el => el.dataset.mirror === key);
+      if (numberEl) {
+        numberEl.value = values[key];
+      }
+    });
+
+  } finally {
+    adjustingLoad = false;
+  }
+}
+
 function syncMirrorsFromForm() {
   mirroredInputs.forEach((input) => {
     const name = input.dataset.mirror;
@@ -136,16 +214,31 @@ function syncMirrorsFromForm() {
 }
 
 function bindMirrors() {
+  const loadKeys = ["motorDirectPct", "vfdPct", "hvacPct", "upsPct", "ledPct", "rectifierPct", "weldingPct", "furnacePct"];
+
   mirroredInputs.forEach((input) => {
-    const source = form.elements[input.dataset.mirror];
+    const name = input.dataset.mirror;
+    const source = form.elements[name];
+    if (!source) return;
+
     input.addEventListener("input", () => {
       const value = clamp(toNumber(input.value), 0, 100);
-      source.value = value;
-      input.value = value;
+      if (loadKeys.includes(name)) {
+        adjustLoads(name, value);
+      } else {
+        source.value = value;
+        input.value = value;
+      }
       runAnalysis();
     });
+
     source.addEventListener("input", () => {
-      input.value = source.value;
+      const value = clamp(toNumber(source.value), 0, 100);
+      if (loadKeys.includes(name)) {
+        adjustLoads(name, value);
+      } else {
+        input.value = value;
+      }
     });
   });
 }
