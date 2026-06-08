@@ -43,6 +43,7 @@ const STANDARD_CAP_VOLTAGES = [415, 440, 480, 525, 690];
 
 const form = document.getElementById("analysisForm");
 const exportPdfButton = document.getElementById("exportPdfButton");
+const exportWordButton = document.getElementById("exportWordButton");
 const brandLogo = document.getElementById("brandLogo");
 const projectSelectRaw = form.elements.projectType;
 const projectSelect = {
@@ -601,70 +602,883 @@ function getImageDataUrl(image) {
   return canvas.toDataURL("image/png");
 }
 
+let regularFontBase64 = null;
+let boldFontBase64 = null;
+
+function uint8ArrayToBase64(uint8) {
+  const CHUNK_SIZE = 0x8000;
+  let index = 0;
+  const length = uint8.length;
+  let result = '';
+  let slice;
+  while (index < length) {
+    slice = uint8.subarray(index, Math.min(index + CHUNK_SIZE, length));
+    result += String.fromCharCode.apply(null, slice);
+    index += CHUNK_SIZE;
+  }
+  return window.btoa(result);
+}
+
+function convertVietnameseAccents(str) {
+  if (!str) return "";
+  return str
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/đ/g, "d")
+    .replace(/Đ/g, "D");
+}
+
+async function loadFonts() {
+  if (regularFontBase64 && boldFontBase64) return true;
+
+  const originalText = exportPdfButton.textContent;
+  exportPdfButton.textContent = "Đang tải font Việt...";
+  exportPdfButton.disabled = true;
+
+  try {
+    let regRes, boldRes;
+    try {
+      [regRes, boldRes] = await Promise.all([
+        fetch("./assets/fonts/Montserrat-Regular.ttf"),
+        fetch("./assets/fonts/Montserrat-Bold.ttf")
+      ]);
+      if (!regRes.ok || !boldRes.ok) {
+        throw new Error("Local fonts not found or failed to load");
+      }
+    } catch (localError) {
+      console.warn("Could not load local Montserrat fonts, falling back to Google CDN...", localError);
+      [regRes, boldRes] = await Promise.all([
+        fetch("https://fonts.gstatic.com/s/montserrat/v31/JTUHjIg1_i6t8kCHKm4532VJOt5-QNFgpCtr6Ew-.ttf"),
+        fetch("https://fonts.gstatic.com/s/montserrat/v31/JTUHjIg1_i6t8kCHKm4532VJOt5-QNFgpCuM70w-.ttf")
+      ]);
+    }
+
+    if (!regRes.ok || !boldRes.ok) {
+      throw new Error("Không thể tải font từ CDN.");
+    }
+
+    const [regBuffer, boldBuffer] = await Promise.all([
+      regRes.arrayBuffer(),
+      boldRes.arrayBuffer()
+    ]);
+
+    regularFontBase64 = uint8ArrayToBase64(new Uint8Array(regBuffer));
+    boldFontBase64 = uint8ArrayToBase64(new Uint8Array(boldBuffer));
+    return true;
+  } catch (error) {
+    console.error("Font loading error:", error);
+    alert("Không thể tải font chữ tiếng Việt. Báo cáo sẽ được xuất bằng font mặc định (không dấu).");
+    return false;
+  } finally {
+    exportPdfButton.textContent = originalText;
+    exportPdfButton.disabled = false;
+  }
+}
+
+function drawKeyValueRow(doc, yPos, items) {
+  const margin = 20;
+  const totalWidth = 170;
+  const numCols = items.length;
+  const colW = totalWidth / numCols;
+  const hasMontserrat = doc.getFont().fontName === "Montserrat";
+  
+  doc.setFont(doc.getFont().fontName, "normal");
+  doc.setFontSize(8.5);
+  doc.setTextColor(100, 116, 139);
+  
+  items.forEach((item, index) => {
+    const startX = margin + index * colW;
+    const lbl = hasMontserrat ? item.label : convertVietnameseAccents(item.label);
+    doc.text(lbl, startX, yPos);
+  });
+  
+  yPos += 3.5;
+  doc.setFont(doc.getFont().fontName, "bold");
+  doc.setTextColor(30, 41, 59);
+  doc.setFontSize(9.5);
+  
+  items.forEach((item, index) => {
+    const startX = margin + index * colW;
+    const val = hasMontserrat ? item.value : convertVietnameseAccents(item.value);
+    doc.text(val, startX, yPos);
+  });
+  
+  yPos += 2.5;
+  doc.setDrawColor(241, 245, 249);
+  doc.setLineWidth(0.15);
+  doc.line(margin, yPos, margin + totalWidth, yPos);
+  
+  return yPos + 4.5;
+}
+
+function drawCard(doc, x, y, w, h, title, val, details, accentColor) {
+  const hasMontserrat = doc.getFont().fontName === "Montserrat";
+  
+  doc.setFillColor(250, 250, 250);
+  doc.rect(x, y, w, h, "F");
+  
+  doc.setDrawColor(226, 232, 240);
+  doc.setLineWidth(0.25);
+  doc.rect(x, y, w, h, "S");
+  
+  doc.setFillColor(accentColor[0], accentColor[1], accentColor[2]);
+  doc.rect(x, y, w, 1.5, "F");
+  
+  doc.setFont(doc.getFont().fontName, "normal");
+  doc.setFontSize(8);
+  doc.setTextColor(100, 116, 139);
+  doc.text(hasMontserrat ? title : convertVietnameseAccents(title), x + 4, y + 6);
+  
+  doc.setFont(doc.getFont().fontName, "bold");
+  doc.setFontSize(11);
+  doc.setTextColor(15, 23, 42);
+  doc.text(hasMontserrat ? val : convertVietnameseAccents(val), x + 4, y + 12.5);
+  
+  doc.setFont(doc.getFont().fontName, "normal");
+  doc.setFontSize(7.5);
+  doc.setTextColor(71, 85, 105);
+  doc.text(hasMontserrat ? details : convertVietnameseAccents(details), x + 4, y + 18);
+}
+
+function drawFooter(doc, pageNum, totalPages, hasMontserrat) {
+  const y = 285;
+  doc.setDrawColor(226, 232, 240);
+  doc.setLineWidth(0.25);
+  doc.line(20, y - 4, 190, y - 4);
+  
+  doc.setFont(doc.getFont().fontName, "normal");
+  doc.setFontSize(7.5);
+  doc.setTextColor(148, 163, 184);
+  
+  const footerText = hasMontserrat 
+    ? "MASTER Engineering Suite • Báo cáo chất lượng điện năng & giải pháp bù phản kháng"
+    : "MASTER Engineering Suite - Bao cao chat luong dien nang & giai phap bu phan khang";
+    
+  doc.text(footerText, 20, y);
+  doc.text(`Trang ${pageNum} / ${totalPages}`, 190, y, { align: "right" });
+}
+
 async function exportPdf() {
   if (!latestReport) return;
 
+  const fontsLoaded = await loadFonts();
+
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({ unit: "mm", format: "a4" });
-  const left = 15;
-  let y = 18;
-
-  if (brandLogo?.complete) {
-    const logoDataUrl = getImageDataUrl(brandLogo);
-    doc.addImage(logoDataUrl, "PNG", 150, 10, 42, 25, undefined, "FAST");
+  
+  if (fontsLoaded && regularFontBase64 && boldFontBase64) {
+    try {
+      doc.addFileToVFS("Montserrat-Regular.ttf", regularFontBase64);
+      doc.addFont("Montserrat-Regular.ttf", "Montserrat", "normal");
+      doc.addFileToVFS("Montserrat-Bold.ttf", boldFontBase64);
+      doc.addFont("Montserrat-Bold.ttf", "Montserrat", "bold");
+      doc.setFont("Montserrat", "normal");
+    } catch (e) {
+      console.error("Error registering custom fonts in jsPDF:", e);
+      doc.setFont("helvetica", "normal");
+    }
+  } else {
+    doc.setFont("helvetica", "normal");
   }
 
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(18);
-  doc.text("MASTER Advisor Report", left, y);
-  y += 8;
+  // Draw Page 1
+  let yPos = 10;
+  
+  doc.setFillColor(15, 108, 92);
+  doc.rect(20, yPos, 170, 3, "F");
+  
+  let headerY = yPos + 10;
+  doc.setFont(doc.getFont().fontName, "bold");
+  doc.setFontSize(9.5);
+  doc.setTextColor(15, 108, 92);
+  doc.text("MASTER ENGINEERING SUITE", 20, headerY);
 
-  doc.setFont("helvetica", "normal");
+  if (brandLogo && brandLogo.complete) {
+    try {
+      const logoDataUrl = getImageDataUrl(brandLogo);
+      doc.addImage(logoDataUrl, "PNG", 154, headerY - 5, 36, 12, undefined, "FAST");
+    } catch (e) {
+      console.warn("Could not render logo in PDF:", e);
+    }
+  } else {
+    doc.setFont(doc.getFont().fontName, "bold");
+    doc.setFontSize(11);
+    doc.setTextColor(15, 108, 92);
+    doc.text("MASTER", 190, headerY, { align: "right" });
+  }
+
+  headerY += 12;
+  doc.setFont(doc.getFont().fontName, "bold");
+  doc.setFontSize(13);
+  doc.setTextColor(15, 23, 42);
+  
+  const hasMontserrat = doc.getFont().fontName === "Montserrat";
+  const docTitle = hasMontserrat 
+    ? "BÁO CÁO PHÂN TÍCH CHẤT LƯỢNG ĐIỆN & ĐỀ XUẤT GIẢI PHÁP" 
+    : "BAO CAO PHAN TICH CHAT LUONG DIEN & DE XUAT GIAI PHAP";
+  
+  doc.text(docTitle, 20, headerY);
+
+  headerY += 6;
+  doc.setFont(doc.getFont().fontName, "normal");
+  doc.setFontSize(9);
+  doc.setTextColor(71, 85, 105);
+  
+  const projectLabel = latestReport.rules.label;
+  doc.text(hasMontserrat ? `Dự án thiết kế: Loại hình công trình - ${projectLabel}` : `Du an thiet ke: Loai hinh cong trinh - ${PROJECT_RULES[latestReport.input.projectType].label}`, 20, headerY);
+
+  headerY += 4;
+  doc.setDrawColor(203, 213, 225);
+  doc.setLineWidth(0.25);
+  doc.line(20, headerY, 190, headerY);
+
+  headerY += 6;
+  yPos = headerY;
+
+  // Metadata block
+  doc.setFillColor(248, 250, 252);
+  doc.rect(20, yPos, 170, 10, "F");
+  doc.setDrawColor(226, 232, 240);
+  doc.setLineWidth(0.15);
+  doc.rect(20, yPos, 170, 10, "S");
+
+  doc.setFont(doc.getFont().fontName, "normal");
+  doc.setFontSize(8);
+  doc.setTextColor(100, 116, 139);
+  
+  const reportCode = "MR-" + Date.now().toString().slice(-6);
+  const formattedDate = new Date().toLocaleDateString("vi-VN") + " " + new Date().toLocaleTimeString("vi-VN");
+  
+  doc.text(hasMontserrat ? `MÃ BÁO CÁO: ${reportCode}` : `MA BAO CAO: ${reportCode}`, 24, yPos + 6.5);
+  doc.text(hasMontserrat ? `NGÀY LẬP: ${formattedDate}` : `NGAY LAP: ${formattedDate}`, 70, yPos + 6.5);
+  doc.text(hasMontserrat ? "VẬN HÀNH: Liên tục" : "VAN HANH: Lien tuc", 152, yPos + 6.5);
+  
+  yPos += 16;
+
+  // Section 1: Inputs
+  doc.setFont(doc.getFont().fontName, "bold");
   doc.setFontSize(10);
-  doc.text(`Loai cong trinh: ${latestReport.rules.label}`, left, y);
-  y += 6;
-  doc.text(`Ngay xuat: ${new Date().toLocaleString("vi-VN")}`, left, y);
-  y += 10;
+  doc.setTextColor(15, 108, 92);
+  doc.text(hasMontserrat ? "I. THÔNG SỐ VẬN HÀNH ĐẦU VÀO" : "I. THONG SO VAN HANH DAU VAO", 20, yPos);
+  yPos += 5.5;
 
-  const lines = [
-    `Cong suat MBA tong: ${formatNumber(latestReport.totalTransformerKva, 1, "kVA")}`,
-    `Cong suat bu theo MBA: ${formatNumber(latestReport.baseCompKvar, 1, "kVAr")}`,
-    `Cong suat bu theo cosphi: ${formatNumber(latestReport.cosCompKvar, 1, "kVAr")}`,
-    `Dung luong de xuat: ${formatNumber(latestReport.totalKvar, 1, "kVAr")}`,
-    `THDi / THDu du doan: ${formatNumber(latestReport.thdi, 1, "%")} / ${formatNumber(latestReport.thdu, 1, "%")}`,
-    `Cuon khang de xuat: ${latestReport.reactorPct}`,
-    `Dien ap tu de xuat: ${latestReport.capVoltage} VAC`,
-    `Loai tu phu hop: ${latestReport.capModel}`,
+  yPos = drawKeyValueRow(doc, yPos, [
+    { label: hasMontserrat ? "Công suất 1 MBA" : "Cong suat 1 MBA", value: formatNumber(latestReport.input.transformerKva, 0, "kVA") },
+    { label: hasMontserrat ? "Số MBA song song" : "So MBA song song", value: formatNumber(latestReport.input.parallelTransformers, 0) },
+    { label: hasMontserrat ? "Công suất tải tổng" : "Cong suat tai tong", value: formatNumber(latestReport.input.loadPowerKw, 0, "kW") }
+  ]);
+
+  yPos = drawKeyValueRow(doc, yPos, [
+    { label: hasMontserrat ? "Hệ số sử dụng Ku" : "He so su dung Ku", value: formatNumber(latestReport.input.ku, 2) },
+    { label: hasMontserrat ? "Dòng phụ tải (IL)" : "Dong phu tai (IL)", value: formatNumber(latestReport.ilA, 1, "A") },
+    { label: hasMontserrat ? "Ngắn mạch (Isc)" : "Ngan mach (Isc)", value: formatNumber(latestReport.iscKa, 1, "kA") }
+  ]);
+
+  yPos = drawKeyValueRow(doc, yPos, [
+    { label: hasMontserrat ? "Điện áp định mức" : "Dien ap dinh muc", value: formatNumber(latestReport.input.ratedVoltage, 0, "V") },
+    { label: hasMontserrat ? "Tần số hệ thống" : "Tan so he thong", value: formatNumber(latestReport.input.frequency, 0, "Hz") },
+    { label: hasMontserrat ? "Sơ đồ đấu nối" : "So do dau noi", value: latestReport.input.wiring }
+  ]);
+
+  yPos = drawKeyValueRow(doc, yPos, [
+    { label: hasMontserrat ? "Cosφ trước bù" : "Cosphi truoc bu", value: formatNumber(latestReport.input.cosPhiBefore, 2) },
+    { label: hasMontserrat ? "Cosφ mục tiêu" : "Cosphi muc tieu", value: formatNumber(latestReport.input.cosPhiTarget, 2) },
+    { label: hasMontserrat ? "Hệ số Uk% MBA" : "He so Uk% MBA", value: formatNumber(latestReport.input.ukPercent, 1, "%") }
+  ]);
+
+  yPos = drawKeyValueRow(doc, yPos, [
+    { label: hasMontserrat ? "Chỉnh lưu chính" : "Chinh luu chinh", value: latestReport.input.rectifierPulse > 0 ? `${latestReport.input.rectifierPulse} xung` : (hasMontserrat ? "Không có" : "Khong co") },
+    { label: hasMontserrat ? "Tải biến động nhanh" : "Tai bien dong nhanh", value: latestReport.input.rapidFluctuation ? (hasMontserrat ? "Có" : "Co") : (hasMontserrat ? "Không" : "Khong") },
+    { label: hasMontserrat ? "Thời gian chạy" : "Thoi gian chay", value: formatNumber(latestReport.input.operatingHours, 0, "g/ngày") }
+  ]);
+
+  yPos += 2;
+
+  // Section 2: Load Mix Table
+  doc.setFont(doc.getFont().fontName, "bold");
+  doc.setFontSize(10);
+  doc.setTextColor(15, 108, 92);
+  doc.text(hasMontserrat ? "II. CƠ CẤU TẢI CHI TIẾT & CHỈ SỐ PHI TUYẾN" : "II. CO CAU TAI CHI TIET & CHI SO PHI TUYEN", 20, yPos);
+  yPos += 5.5;
+
+  const loadItems = [
+    { label: hasMontserrat ? "Động cơ chạy trực tiếp" : "Dong co chay truc tiep", pct: latestReport.input.motorDirectPct, weight: NONLINEAR_WEIGHTS.motorDirectPct },
+    { label: hasMontserrat ? "Biến tần VFD" : "Bien tan VFD", pct: latestReport.input.vfdPct, weight: NONLINEAR_WEIGHTS.vfdPct },
+    { label: "UPS", pct: latestReport.input.upsPct, weight: NONLINEAR_WEIGHTS.upsPct },
+    { label: "LED / SMPS / Server", pct: latestReport.input.ledPct, weight: NONLINEAR_WEIGHTS.ledPct },
+    { label: hasMontserrat ? "Chiller / AHU / Bơm / Quạt" : "Chiller / AHU / Bom / Quat", pct: latestReport.input.hvacPct, weight: NONLINEAR_WEIGHTS.hvacPct },
+    { label: hasMontserrat ? "Chỉnh lưu AC/DC" : "Chinh luu AC/DC", pct: latestReport.input.rectifierPct, weight: NONLINEAR_WEIGHTS.rectifierPct },
+    { label: hasMontserrat ? "Máy hàn" : "May han", pct: latestReport.input.weldingPct, weight: NONLINEAR_WEIGHTS.weldingPct },
+    { label: hasMontserrat ? "Lò nhiệt / lò cảm ứng" : "Lo nhiet / lo cam ung", pct: latestReport.input.furnacePct, weight: NONLINEAR_WEIGHTS.furnacePct },
+    { label: hasMontserrat ? "Tải 1 pha trên tổng tải" : "Tai 1 pha tren tong tai", pct: latestReport.input.singlePhasePct, weight: 0 },
+  ].filter(item => item.pct > 0);
+
+  doc.setFillColor(241, 245, 249);
+  doc.rect(20, yPos, 170, 6, "F");
+  doc.setFont(doc.getFont().fontName, "bold");
+  doc.setFontSize(8);
+  doc.setTextColor(51, 65, 85);
+  doc.text(hasMontserrat ? "Tên nhóm phụ tải" : "Ten nhom phu tai", 22, yPos + 4.2);
+  doc.text(hasMontserrat ? "Tỷ lệ khai báo" : "Ty le khai bao", 110, yPos + 4.2, { align: "right" });
+  doc.text(hasMontserrat ? "Trọng số phi tuyến" : "Trong so phi tuyen", 145, yPos + 4.2, { align: "right" });
+  doc.text(hasMontserrat ? "Quy đổi phi tuyến" : "Quy doi phi tuyen", 188, yPos + 4.2, { align: "right" });
+
+  yPos += 6;
+  doc.setFont(doc.getFont().fontName, "normal");
+  doc.setTextColor(30, 41, 59);
+
+  loadItems.forEach((item, index) => {
+    if (index % 2 === 1) {
+      doc.setFillColor(248, 250, 252);
+      doc.rect(20, yPos, 170, 6, "F");
+    }
+    const contribution = item.weight > 0 ? (item.pct * item.weight) : 0;
+    
+    doc.text(item.label, 22, yPos + 4.2);
+    doc.text(formatNumber(item.pct, 0, "%"), 110, yPos + 4.2, { align: "right" });
+    doc.text(item.weight > 0 ? formatNumber(item.weight, 2) : "--", 145, yPos + 4.2, { align: "right" });
+    doc.text(item.weight > 0 ? formatNumber(contribution, 1, "%") : "--", 188, yPos + 4.2, { align: "right" });
+
+    doc.setDrawColor(241, 245, 249);
+    doc.setLineWidth(0.1);
+    doc.line(20, yPos + 6, 190, yPos + 6);
+    yPos += 6;
+  });
+
+  doc.setFillColor(241, 245, 249);
+  doc.rect(20, yPos, 170, 6, "F");
+  doc.setFont(doc.getFont().fontName, "bold");
+  doc.text(hasMontserrat ? "Tổng cộng quy đổi" : "Tong cong quy doi", 22, yPos + 4.2);
+  doc.text(formatNumber(latestReport.declaredPct, 0, "%"), 110, yPos + 4.2, { align: "right" });
+  doc.text("--", 145, yPos + 4.2, { align: "right" });
+  doc.text(formatNumber(latestReport.nonlinearPct, 1, "%"), 188, yPos + 4.2, { align: "right" });
+  
+  yPos += 11;
+
+  // Section 3: Recommendations Title
+  doc.setFont(doc.getFont().fontName, "bold");
+  doc.setFontSize(10);
+  doc.setTextColor(15, 108, 92);
+  doc.text(hasMontserrat ? "III. KẾT QUẢ ĐÁNH GIÁ & ĐỀ XUẤT THIẾT BỊ" : "III. KET QUA DANH GIA & DE XUAT THIET BI", 20, yPos);
+  yPos += 5.5;
+
+  const accentHarmonics = latestReport.thdi > 40 ? [194, 65, 12] : (latestReport.thdi > 25 ? [183, 121, 31] : (latestReport.thdi > 15 ? [37, 99, 235] : [19, 121, 91]));
+  
+  let statusHarmonics = "Lưới ổn định";
+  if (latestReport.thdi > 40) {
+    statusHarmonics = hasMontserrat ? "Độ méo rất cao (Nguy hiểm)" : "Do meo rat cao (Nguy hiem)";
+  } else if (latestReport.thdi > 25) {
+    statusHarmonics = hasMontserrat ? "Méo dạng đáng kể" : "Meo dang dang ke";
+  } else if (latestReport.thdi > 15) {
+    statusHarmonics = hasMontserrat ? "Méo dạng nhẹ" : "Meo dang nhe";
+  }
+
+  const accentAhf = latestReport.ahfNeeded ? [194, 65, 12] : [19, 121, 91];
+
+  drawCard(doc, 20, yPos, 82, 22, 
+    hasMontserrat ? "Méo dạng sóng hài (THDi / THDu)" : "Meo dang song hai (THDi / THDu)", 
+    `THDi: ${formatNumber(latestReport.thdi, 1, "%")} / THDu: ${formatNumber(latestReport.thdu, 1, "%")}`, 
+    statusHarmonics, 
+    accentHarmonics
+  );
+
+  drawCard(doc, 108, yPos, 82, 22, 
+    hasMontserrat ? "Bù công suất phản kháng tổng" : "Bu cong suat phan khang tong", 
+    formatNumber(latestReport.totalKvar, 1, "kVAr"), 
+    hasMontserrat 
+      ? `Bù Máp: ${formatNumber(latestReport.baseCompKvar, 1, "kVAr")} | Bù Cosφ: ${formatNumber(latestReport.cosCompKvar, 1, "kVAr")}`
+      : `Bu Mba: ${formatNumber(latestReport.baseCompKvar, 1, "kVAr")} | Bu Cosphi: ${formatNumber(latestReport.cosCompKvar, 1, "kVAr")}`, 
+    [15, 108, 92]
+  );
+
+  yPos += 26;
+
+  drawCard(doc, 20, yPos, 82, 22, 
+    hasMontserrat ? "Cuộn kháng & cấp điện áp tụ" : "Cuon khang & cap dien ap tu", 
+    hasMontserrat ? `Kháng: ${latestReport.reactorPct} | Tụ: ${latestReport.capVoltage} VAC` : `Khang: ${latestReport.reactorPct} | Tu: ${latestReport.capVoltage} VAC`, 
+    hasMontserrat ? `Điện áp tính toán: ${latestReport.capVoltageRaw} V` : `Dien ap tinh toan: ${latestReport.capVoltageRaw} V`, 
+    [15, 108, 92]
+  );
+
+  drawCard(doc, 108, yPos, 82, 22, 
+    hasMontserrat ? "Bộ lọc sóng hài tích cực AHF" : "Bo loc song hai tich cuc AHF", 
+    latestReport.ahfNeeded ? (hasMontserrat ? `Khuyến nghị: ${formatNumber(latestReport.ahf.recommendedA, 1, "A")}` : `Khuyen nghi: ${formatNumber(latestReport.ahf.recommendedA, 1, "A")}`) : (hasMontserrat ? "Chưa bắt buộc lắp AHF" : "Chua bat buoc lap AHF"), 
+    latestReport.ahfNeeded ? (hasMontserrat ? `Dung lượng: ${formatNumber(latestReport.ahf.recommendedKva, 1, "kVA")} | Mục tiêu: <${latestReport.ahf.targetThdi}%` : `Dung luong: ${formatNumber(latestReport.ahf.recommendedKva, 1, "kVA")} | Muc tieu: <${latestReport.ahf.targetThdi}%`) : (hasMontserrat ? "Mức độ méo hài nằm trong ngưỡng" : "Muc do meo hai nam trong nguong"), 
+    accentAhf
+  );
+
+  // Page 2
+  doc.addPage();
+  
+  doc.setFillColor(15, 108, 92);
+  doc.rect(20, 10, 170, 1.5, "F");
+
+  let yPage2 = 20;
+
+  // GIẢI PHÁP TỔNG THỂ KHUYẾN NGHỊ (Wide Box)
+  doc.setFillColor(248, 250, 252);
+  doc.rect(20, yPage2, 170, 14, "F");
+  doc.setDrawColor(15, 108, 92);
+  doc.setLineWidth(0.3);
+  doc.rect(20, yPage2, 170, 14, "S");
+
+  doc.setFont(doc.getFont().fontName, "bold");
+  doc.setFontSize(8.5);
+  doc.setTextColor(15, 108, 92);
+  doc.text(hasMontserrat ? "GIẢI PHÁP TỔNG THỂ KHUYẾN NGHỊ" : "GIAI PHAP TONG THE KHUYEN NGHI", 24, yPage2 + 5.5);
+
+  doc.setFont(doc.getFont().fontName, "normal");
+  doc.setFontSize(9);
+  doc.setTextColor(30, 41, 59);
+  
+  const solText = latestReport.solution + " | " + latestReport.capModel;
+  doc.text(hasMontserrat ? solText : convertVietnameseAccents(solText), 24, yPage2 + 10);
+  
+  yPage2 += 22;
+
+  // Section 4: Narrative Evaluation
+  doc.setFont(doc.getFont().fontName, "bold");
+  doc.setFontSize(10);
+  doc.setTextColor(15, 108, 92);
+  doc.text(hasMontserrat ? "IV. ĐÁNH GIÁ CHI TIẾT HỆ THỐNG" : "IV. DANH GIA CHI TIET HE THONG", 20, yPage2);
+  yPage2 += 6;
+
+  doc.setFont(doc.getFont().fontName, "normal");
+  doc.setFontSize(9.5);
+  doc.setTextColor(30, 41, 59);
+
+  const narrativeText = [
+    `Loại công trình ${latestReport.rules.label} được gán mức THDi nền ${formatNumber(latestReport.rules.baseThdi, 0, "%")} và hệ số bù sơ bộ ${latestReport.rules.baseComp * 100}% công suất MBA.`,
+    `Với cơ cấu tải hiện tại, phần mềm đánh giá tải phi tuyến quy đổi ở mức ${formatNumber(latestReport.nonlinearPct, 1, "%")} và chọn dung lượng bù sơ bộ ${formatNumber(latestReport.totalKvar, 1, "kVAr")}.`,
+    `Dòng tải sử dụng khoảng ${formatNumber(latestReport.ilA, 1, "A")}, Isc đánh giá ${formatNumber(latestReport.iscKa, 1, "kA")}, THDu ước tính ${formatNumber(latestReport.thdu, 1, "%")}.`,
+    `Giải pháp đang nghiêng về ${latestReport.solution}; ưu tiên ${latestReport.capModel} với điện áp tụ không thấp hơn ${latestReport.capVoltage} VAC.`,
     latestReport.ahfNeeded
-      ? `AHF de xuat: ${formatNumber(latestReport.ahf.recommendedA, 1, "A")} (${formatNumber(latestReport.ahf.recommendedKva, 1, "kVA")})`
-      : "AHF de xuat: Chua bat buoc",
-    `Giai phap tong the: ${latestReport.solution}`,
+      ? `Do rủi ro hài cao, nên cân nhắc AHF mục tiêu THDi sau lọc ${formatNumber(latestReport.ahf.targetThdi, 0, "%")} với sizing sơ bộ ${formatNumber(latestReport.ahf.recommendedA, 1, "A")} (${formatNumber(latestReport.ahf.recommendedKva, 1, "kVA")}).`
+      : "Cấu hình hiện tại chưa bắt buộc AHF, nhưng vẫn nên đo PQ thực tế khi dự án đi vào vận hành.",
   ];
 
-  lines.forEach((line) => {
-    const wrapped = doc.splitTextToSize(line, 180);
-    doc.text(wrapped, left, y);
-    y += wrapped.length * 5;
-  });
-
-  y += 4;
-  doc.setFont("helvetica", "bold");
-  doc.text("Canh bao ky thuat", left, y);
-  y += 6;
-  doc.setFont("helvetica", "normal");
-
-  latestReport.warnings.forEach((warning, index) => {
-    const text = `${index + 1}. ${warning.title}: ${warning.body}`;
-    const wrapped = doc.splitTextToSize(text, 180);
-    if (y + wrapped.length * 5 > 280) {
+  narrativeText.forEach(para => {
+    const textToPrint = hasMontserrat ? para : convertVietnameseAccents(para);
+    const wrapped = doc.splitTextToSize(textToPrint, 170);
+    
+    if (yPage2 + wrapped.length * 5 > 275) {
       doc.addPage();
-      y = 18;
+      doc.setFillColor(15, 108, 92);
+      doc.rect(20, 12, 170, 1.5, "F");
+      yPage2 = 22;
     }
-    doc.text(wrapped, left, y);
-    y += wrapped.length * 5 + 2;
+    
+    doc.text(wrapped, 20, yPage2);
+    yPage2 += wrapped.length * 4.8 + 2.5;
   });
+
+  yPage2 += 4;
+
+  // Section 5: Warnings Title
+  doc.setFont(doc.getFont().fontName, "bold");
+  doc.setFontSize(10);
+  doc.setTextColor(15, 108, 92);
+  doc.text(hasMontserrat ? "V. CẢNH BÁO KỸ THUẬT & KHUYẾN NGHỊ" : "V. CANH BAO KY THUAT & KHUYEN NGHI", 20, yPage2);
+  yPage2 += 6;
+
+  latestReport.warnings.forEach(warning => {
+    let borderRGB, bgRGB, textRGB;
+    if (warning.level === "danger") {
+      borderRGB = [194, 65, 12];
+      bgRGB = [255, 241, 236];
+      textRGB = [124, 45, 18];
+    } else if (warning.level === "warning") {
+      borderRGB = [183, 121, 31];
+      bgRGB = [255, 249, 232];
+      textRGB = [113, 63, 18];
+    } else {
+      borderRGB = [19, 121, 91];
+      bgRGB = [236, 251, 245];
+      textRGB = [6, 78, 59];
+    }
+
+    const titleText = hasMontserrat ? warning.title : convertVietnameseAccents(warning.title);
+    const bodyText = hasMontserrat ? warning.body : convertVietnameseAccents(warning.body);
+
+    doc.setFont(doc.getFont().fontName, "normal");
+    doc.setFontSize(8.5);
+    const bodyTextWrapped = doc.splitTextToSize(bodyText, 160);
+    const cardHeight = 6 + bodyTextWrapped.length * 4 + 4;
+
+    if (yPage2 + cardHeight > 260) {
+      doc.addPage();
+      doc.setFillColor(15, 108, 92);
+      doc.rect(20, 12, 170, 1.5, "F");
+      yPage2 = 22;
+      doc.setFont(doc.getFont().fontName, "bold");
+      doc.setFontSize(10);
+      doc.setTextColor(15, 108, 92);
+      doc.text(hasMontserrat ? "V. CẢNH BÁO KỸ THUẬT & KHUYẾN NGHỊ (tiếp)" : "V. CANH BAO KY THUAT & KHUYEN NGHI (tiep)", 20, yPage2);
+      yPage2 += 6;
+    }
+
+    doc.setFillColor(bgRGB[0], bgRGB[1], bgRGB[2]);
+    doc.rect(20, yPage2, 170, cardHeight, "F");
+
+    doc.setFillColor(borderRGB[0], borderRGB[1], borderRGB[2]);
+    doc.rect(20, yPage2, 1.8, cardHeight, "F");
+
+    doc.setDrawColor(226, 232, 240);
+    doc.setLineWidth(0.2);
+    doc.rect(20, yPage2, 170, cardHeight, "S");
+
+    doc.setFont(doc.getFont().fontName, "bold");
+    doc.setFontSize(9);
+    doc.setTextColor(textRGB[0], textRGB[1], textRGB[2]);
+    doc.text(titleText, 25, yPage2 + 4.5);
+
+    doc.setFont(doc.getFont().fontName, "normal");
+    doc.setFontSize(8.5);
+    doc.setTextColor(71, 85, 105);
+    doc.text(bodyTextWrapped, 25, yPage2 + 9.5);
+
+    yPage2 += cardHeight + 4;
+  });
+
+  yPage2 += 4;
+
+  // Expected Harmonics
+  if (yPage2 + 20 > 260) {
+    doc.addPage();
+    doc.setFillColor(15, 108, 92);
+    doc.rect(20, 12, 170, 1.5, "F");
+    yPage2 = 22;
+  }
+
+  doc.setFont(doc.getFont().fontName, "bold");
+  doc.setFontSize(10);
+  doc.setTextColor(15, 108, 92);
+  doc.text(hasMontserrat ? "VI. THÀNH PHẦN SÓNG HÀI ĐẶC TRƯNG" : "VI. THANH PHAN SONG HAI DAC TRUNG", 20, yPage2);
+  yPage2 += 6;
+
+  doc.setFont(doc.getFont().fontName, "normal");
+  doc.setFontSize(9);
+  doc.setTextColor(30, 41, 59);
+  
+  const recP = latestReport.input.rectifierPulse || 0;
+  const pulseText = hasMontserrat 
+    ? `Bộ chỉnh lưu ${recP} xung có xu hướng sinh các bậc hài ưu thế phụ thuộc vào sơ đồ đấu nối:` 
+    : `Bo chinh luu ${recP} xung co xu huong sinh cac bac hai uu the phu thuoc vao so do dau noi:`;
+  doc.text(pulseText, 20, yPage2);
+  yPage2 += 5.5;
+
+  const harmText = latestReport.harmonics.length
+    ? latestReport.harmonics.map(h => `H${h}`).join(", ")
+    : (hasMontserrat ? "Không ghi nhận hài đặc trưng từ chỉnh lưu." : "Khong ghi nhan hai dac trung tu chinh luu.");
+    
+  doc.setFont(doc.getFont().fontName, "bold");
+  doc.setFontSize(9.5);
+  doc.setTextColor(194, 65, 12);
+  doc.text(harmText, 20, yPage2);
+  yPage2 += 12;
+
+  // Signature Block
+  if (yPage2 > 230) {
+    doc.addPage();
+    doc.setFillColor(15, 108, 92);
+    doc.rect(20, 12, 170, 1.5, "F");
+    yPage2 = 25;
+  } else {
+    yPage2 = 235;
+  }
+
+  doc.setDrawColor(203, 213, 225);
+  doc.setLineWidth(0.3);
+  doc.line(20, yPage2, 190, yPage2);
+  yPage2 += 8;
+
+  doc.setFont(doc.getFont().fontName, "bold");
+  doc.setFontSize(9);
+  doc.setTextColor(71, 85, 105);
+  doc.text(hasMontserrat ? "KỸ SƯ THỰC HIỆN" : "KY SU THUC HIEN", 20, yPage2);
+  doc.text(hasMontserrat ? "PHÊ DUYỆT BÁO CÁO" : "PHE DUYET BAO CAO", 190, yPage2, { align: "right" });
+
+  yPage2 += 4.5;
+  doc.setFont(doc.getFont().fontName, "normal");
+  doc.setFontSize(8);
+  doc.setTextColor(148, 163, 184);
+  doc.text(hasMontserrat ? "(Ký & ghi rõ họ tên)" : "(Ky & ghi ro ho ten)", 20, yPage2);
+  doc.text(hasMontserrat ? "(Ký, đóng dấu & ghi rõ họ tên)" : "(Ky, dong dau & ghi ro ho ten)", 190, yPage2, { align: "right" });
+
+  yPage2 += 20;
+  doc.setFont(doc.getFont().fontName, "bold");
+  doc.setFontSize(8.5);
+  doc.setTextColor(15, 108, 92);
+  doc.text("MASTER Advisor System", 20, yPage2);
+  doc.text(hasMontserrat ? "Ban Kỹ thuật & Công nghệ" : "Ban Ky thuat & Cong nghe", 190, yPage2, { align: "right" });
+
+  // Pass-2 footer draw
+  const pageCount = doc.internal.getNumberOfPages();
+  for (let i = 1; i <= pageCount; i++) {
+    doc.setPage(i);
+    drawFooter(doc, i, pageCount, hasMontserrat);
+  }
 
   doc.save(`MASTER-report-${Date.now()}.pdf`);
+}
+
+function exportWord() {
+  if (!latestReport) return;
+
+  const docTitle = "Báo cáo phân tích chất lượng điện & Đề xuất giải pháp";
+  
+  const activeLoads = [
+    { name: "Động cơ chạy trực tiếp", pct: latestReport.input.motorDirectPct, weight: NONLINEAR_WEIGHTS.motorDirectPct },
+    { name: "Biến tần VFD", pct: latestReport.input.vfdPct, weight: NONLINEAR_WEIGHTS.vfdPct },
+    { name: "UPS", pct: latestReport.input.upsPct, weight: NONLINEAR_WEIGHTS.upsPct },
+    { name: "LED / SMPS / Server", pct: latestReport.input.ledPct, weight: NONLINEAR_WEIGHTS.ledPct },
+    { name: "Chiller / AHU / Bơm / Quạt", pct: latestReport.input.hvacPct, weight: NONLINEAR_WEIGHTS.hvacPct },
+    { name: "Chỉnh lưu AC/DC", pct: latestReport.input.rectifierPct, weight: NONLINEAR_WEIGHTS.rectifierPct },
+    { name: "Máy hàn", pct: latestReport.input.weldingPct, weight: NONLINEAR_WEIGHTS.weldingPct },
+    { name: "Lò nhiệt / lò cảm ứng", pct: latestReport.input.furnacePct, weight: NONLINEAR_WEIGHTS.furnacePct },
+    { name: "Tải 1 pha trên tổng tải", pct: latestReport.input.singlePhasePct, weight: 0 },
+  ].filter(item => item.pct > 0);
+
+  let loadMixRowsHtml = "";
+  activeLoads.forEach(item => {
+    const contribution = item.weight > 0 ? (item.pct * item.weight) : 0;
+    loadMixRowsHtml += `
+      <tr>
+        <td style="padding: 6px; border: 1px solid #cbd5e1;">${item.name}</td>
+        <td style="padding: 6px; border: 1px solid #cbd5e1; text-align: right;">${formatNumber(item.pct, 0, "%")}</td>
+        <td style="padding: 6px; border: 1px solid #cbd5e1; text-align: right;">${item.weight > 0 ? formatNumber(item.weight, 2) : "--"}</td>
+        <td style="padding: 6px; border: 1px solid #cbd5e1; text-align: right;">${item.weight > 0 ? formatNumber(contribution, 1, "%") : "--"}</td>
+      </tr>
+    `;
+  });
+
+  let warningsHtml = "";
+  latestReport.warnings.forEach(warning => {
+    let colorHex = "#13795b";
+    let bgHex = "#ecfbf5";
+    let textHex = "#064e3b";
+    
+    if (warning.level === "danger") {
+      colorHex = "#c2410c";
+      bgHex = "#fff1ec";
+      textHex = "#7c2d12";
+    } else if (warning.level === "warning") {
+      colorHex = "#b7791f";
+      bgHex = "#fff9e8";
+      textHex = "#713f12";
+    }
+
+    warningsHtml += `
+      <div style="border-left: 4px solid ${colorHex}; background-color: ${bgHex}; padding: 10px; margin-bottom: 12px; border-radius: 4px;">
+        <h4 style="margin: 0 0 4px 0; color: ${textHex}; font-size: 11pt;">${warning.title}</h4>
+        <p style="margin: 0; color: #475569; font-size: 10pt;">${warning.body}</p>
+      </div>
+    `;
+  });
+
+  const narrativeText = [
+    `Loại công trình ${latestReport.rules.label} được gán mức THDi nền ${formatNumber(latestReport.rules.baseThdi, 0, "%")} và hệ số bù sơ bộ ${latestReport.rules.baseComp * 100}% công suất MBA.`,
+    `Với cơ cấu tải hiện tại, phần mềm đánh giá tải phi tuyến quy đổi ở mức ${formatNumber(latestReport.nonlinearPct, 1, "%")} và chọn dung lượng bù sơ bộ ${formatNumber(latestReport.totalKvar, 1, "kVAr")}.`,
+    `Dòng tải sử dụng khoảng ${formatNumber(latestReport.ilA, 1, "A")}, Isc đánh giá ${formatNumber(latestReport.iscKa, 1, "kA")}, THDu ước tính ${formatNumber(latestReport.thdu, 1, "%")}.`,
+    `Giải pháp đang nghiêng về ${latestReport.solution}; ưu tiên ${latestReport.capModel} với điện áp tụ không thấp hơn ${latestReport.capVoltage} VAC.`,
+    latestReport.ahfNeeded
+      ? `Do rủi ro hài cao, nên cân nhắc AHF mục tiêu THDi sau lọc ${formatNumber(latestReport.ahf.targetThdi, 0, "%")} với sizing sơ bộ ${formatNumber(latestReport.ahf.recommendedA, 1, "A")} (${formatNumber(latestReport.ahf.recommendedKva, 1, "kVA")}).`
+      : "Cấu hình hiện tại chưa bắt buộc AHF, nhưng vẫn nên đo PQ thực tế khi dự án đi vào vận hành.",
+  ];
+
+  const htmlContent = `
+    <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+    <head>
+      <meta charset="utf-8">
+      <title>${docTitle}</title>
+      <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #1e293b; font-size: 11pt; }
+        .header-table { width: 100%; border: none; margin-bottom: 20px; }
+        .header-brand { color: #0f6c5c; font-weight: bold; font-size: 11pt; text-align: left; }
+        .header-logo { text-align: right; font-weight: bold; color: #0f6c5c; font-size: 14pt; }
+        h1 { color: #0f6c5c; font-size: 16pt; font-weight: bold; margin-top: 20px; margin-bottom: 5px; }
+        .subtitle { color: #475569; font-size: 11pt; margin-bottom: 15px; }
+        .meta-table { width: 100%; border: 1px solid #e2e8f0; background-color: #f8fafc; margin-bottom: 25px; }
+        .meta-table td { padding: 6px 12px; border: none; font-size: 9.5pt; color: #475569; }
+        h2 { color: #0f6c5c; font-size: 12pt; font-weight: bold; border-bottom: 1.5px solid #0f6c5c; padding-bottom: 4px; margin-top: 25px; margin-bottom: 10px; }
+        .data-table { border-collapse: collapse; width: 100%; margin-bottom: 20px; }
+        .data-table th, .data-table td { border: 1px solid #cbd5e1; padding: 6px 10px; text-align: left; font-size: 10pt; }
+        .data-table th { background-color: #f1f5f9; color: #334155; font-weight: bold; }
+        .highlight-row { background-color: #f8fafc; }
+        .card-table { width: 100%; border-spacing: 10px; border-collapse: separate; margin-bottom: 20px; }
+        .card-td { border: 1px solid #e2e8f0; background-color: #fafafa; padding: 10px; width: 50%; vertical-align: top; border-radius: 4px; }
+        .card-td h3 { margin: 0 0 6px 0; color: #64748b; font-size: 9pt; font-weight: normal; }
+        .card-td .value { margin: 0 0 4px 0; color: #0f172a; font-size: 13pt; font-weight: bold; }
+        .card-td .desc { margin: 0; color: #475569; font-size: 8.5pt; }
+        .solution-box { border: 1.5px solid #0f6c5c; background-color: #f8fafc; padding: 12px; margin-bottom: 25px; border-radius: 4px; }
+        .solution-box h3 { margin: 0 0 4px 0; color: #0f6c5c; font-size: 10pt; font-weight: bold; }
+        .solution-box p { margin: 0; color: #1e293b; font-size: 10.5pt; }
+        .narrative-p { font-size: 10.5pt; text-align: justify; margin-bottom: 10px; color: #334155; }
+        .footer-line { border-top: 1px solid #cbd5e1; margin-top: 40px; padding-top: 8px; font-size: 8.5pt; color: #94a3b8; }
+        .signature-table { width: 100%; border: none; margin-top: 50px; }
+        .signature-table td { border: none; padding: 5px; width: 50%; vertical-align: top; text-align: center; }
+        .signature-table .title { font-weight: bold; color: #475569; font-size: 10pt; }
+        .signature-table .desc { color: #94a3b8; font-size: 8.5pt; margin-bottom: 60px; }
+        .signature-table .name { font-weight: bold; color: #0f6c5c; font-size: 10pt; }
+      </style>
+    </head>
+    <body>
+      <table class="header-table" style="width: 100%;">
+        <tr>
+          <td class="header-brand" style="text-align: left;">MASTER ENGINEERING SUITE</td>
+          <td class="header-logo" style="text-align: right;">MASTER</td>
+        </tr>
+      </table>
+
+      <h1 style="color: #0f6c5c; font-size: 16pt;">BÁO CÁO PHÂN TÍCH CHẤT LƯỢNG ĐIỆN & ĐỀ XUẤT GIẢI PHÁP</h1>
+      <div class="subtitle" style="color: #475569; font-size: 11pt;">Dự án thiết kế: Loại hình công trình - ${latestReport.rules.label}</div>
+
+      <table class="meta-table" style="width: 100%; border: 1px solid #e2e8f0; background-color: #f8fafc;">
+        <tr>
+          <td style="padding: 6px 12px;"><strong>MÃ BÁO CÁO:</strong> MR-${Date.now().toString().slice(-6)}</td>
+          <td style="padding: 6px 12px;"><strong>NGÀY LẬP:</strong> ${new Date().toLocaleDateString("vi-VN")} ${new Date().toLocaleTimeString("vi-VN")}</td>
+          <td style="padding: 6px 12px;"><strong>VẬN HÀNH:</strong> Liên tục</td>
+        </tr>
+      </table>
+
+      <h2>I. THÔNG SỐ VẬN HÀNH ĐẦU VÀO</h2>
+      <table class="data-table" style="width: 100%; border-collapse: collapse;">
+        <tr class="highlight-row" style="background-color: #f8fafc;">
+          <td style="padding: 6px 10px; border: 1px solid #cbd5e1;"><strong>Công suất 1 MBA:</strong> ${formatNumber(latestReport.input.transformerKva, 0, "kVA")}</td>
+          <td style="padding: 6px 10px; border: 1px solid #cbd5e1;"><strong>Số MBA song song:</strong> ${formatNumber(latestReport.input.parallelTransformers, 0)} máy</td>
+          <td style="padding: 6px 10px; border: 1px solid #cbd5e1;"><strong>Công suất tải tổng:</strong> ${formatNumber(latestReport.input.loadPowerKw, 0, "kW")}</td>
+        </tr>
+        <tr>
+          <td style="padding: 6px 10px; border: 1px solid #cbd5e1;"><strong>Hệ số sử dụng Ku:</strong> ${formatNumber(latestReport.input.ku, 2)}</td>
+          <td style="padding: 6px 10px; border: 1px solid #cbd5e1;"><strong>Dòng phụ tải (IL):</strong> ${formatNumber(latestReport.ilA, 1, "A")}</td>
+          <td style="padding: 6px 10px; border: 1px solid #cbd5e1;"><strong>Ngắn mạch (Isc):</strong> ${formatNumber(latestReport.iscKa, 1, "kA")}</td>
+        </tr>
+        <tr class="highlight-row" style="background-color: #f8fafc;">
+          <td style="padding: 6px 10px; border: 1px solid #cbd5e1;"><strong>Điện áp định mức:</strong> ${formatNumber(latestReport.input.ratedVoltage, 0, "V")}</td>
+          <td style="padding: 6px 10px; border: 1px solid #cbd5e1;"><strong>Tần số hệ thống:</strong> ${formatNumber(latestReport.input.frequency, 0, "Hz")}</td>
+          <td style="padding: 6px 10px; border: 1px solid #cbd5e1;"><strong>Sơ đồ đấu nối:</strong> ${latestReport.input.wiring}</td>
+        </tr>
+        <tr>
+          <td style="padding: 6px 10px; border: 1px solid #cbd5e1;"><strong>Cosφ trước bù:</strong> ${formatNumber(latestReport.input.cosPhiBefore, 2)}</td>
+          <td style="padding: 6px 10px; border: 1px solid #cbd5e1;"><strong>Cosφ mục tiêu:</strong> ${formatNumber(latestReport.input.cosPhiTarget, 2)}</td>
+          <td style="padding: 6px 10px; border: 1px solid #cbd5e1;"><strong>Hệ số Uk% MBA:</strong> ${formatNumber(latestReport.input.ukPercent, 1, "%")}</td>
+        </tr>
+        <tr class="highlight-row" style="background-color: #f8fafc;">
+          <td style="padding: 6px 10px; border: 1px solid #cbd5e1;"><strong>Chỉnh lưu chính:</strong> ${latestReport.input.rectifierPulse > 0 ? `${latestReport.input.rectifierPulse} xung` : "Không có"}</td>
+          <td style="padding: 6px 10px; border: 1px solid #cbd5e1;"><strong>Tải biến động nhanh:</strong> ${latestReport.input.rapidFluctuation ? "Có" : "Không"}</td>
+          <td style="padding: 6px 10px; border: 1px solid #cbd5e1;"><strong>Thời gian chạy:</strong> ${formatNumber(latestReport.input.operatingHours, 0, "giờ/ngày")}</td>
+        </tr>
+      </table>
+
+      <h2>II. CƠ CẤU TẢI CHI TIẾT & CHỈ SỐ PHI TUYẾN</h2>
+      <table class="data-table" style="width: 100%; border-collapse: collapse;">
+        <thead>
+          <tr style="background-color: #f1f5f9;">
+            <th style="padding: 6px 10px; border: 1px solid #cbd5e1;">Tên nhóm phụ tải</th>
+            <th style="padding: 6px 10px; border: 1px solid #cbd5e1; text-align: right;">Tỷ lệ khai báo</th>
+            <th style="padding: 6px 10px; border: 1px solid #cbd5e1; text-align: right;">Trọng số phi tuyến</th>
+            <th style="padding: 6px 10px; border: 1px solid #cbd5e1; text-align: right;">Quy đổi phi tuyến</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${loadMixRowsHtml}
+          <tr style="background-color: #f1f5f9; font-weight: bold;">
+            <td style="padding: 6px 10px; border: 1px solid #cbd5e1;">Tổng cộng quy đổi</td>
+            <td style="padding: 6px 10px; border: 1px solid #cbd5e1; text-align: right;">${formatNumber(latestReport.declaredPct, 0, "%")}</td>
+            <td style="padding: 6px 10px; border: 1px solid #cbd5e1; text-align: right;">--</td>
+            <td style="padding: 6px 10px; border: 1px solid #cbd5e1; text-align: right;">${formatNumber(latestReport.nonlinearPct, 1, "%")}</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h2>III. KẾT QUẢ ĐÁNH GIÁ & ĐỀ XUẤT THIẾT BỊ</h2>
+      <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+        <tr>
+          <td style="width: 50%; padding: 8px; vertical-align: top;">
+            <div style="border: 1px solid #cbd5e1; border-top: 3px solid ${latestReport.thdi > 40 ? "#c2410c" : (latestReport.thdi > 25 ? "#b7791f" : "#13795b")}; background-color: #fafafa; padding: 10px; min-height: 80px;">
+              <h3 style="margin: 0 0 6px 0; color: #64748b; font-size: 9pt; font-weight: normal;">Méo dạng sóng hài (THDi / THDu)</h3>
+              <div style="margin: 0 0 4px 0; color: #0f172a; font-size: 12pt; font-weight: bold;">THDi: ${formatNumber(latestReport.thdi, 1, "%")} / THDu: ${formatNumber(latestReport.thdu, 1, "%")}</div>
+              <p style="margin: 0; color: #475569; font-size: 8.5pt;">${latestReport.thdi > 40 ? "Độ méo rất cao (Nguy hiểm)" : (latestReport.thdi > 25 ? "Méo dạng đáng kể" : (latestReport.thdi > 15 ? "Méo dạng nhẹ" : "Lưới ổn định"))}</p>
+            </div>
+          </td>
+          <td style="width: 50%; padding: 8px; vertical-align: top;">
+            <div style="border: 1px solid #cbd5e1; border-top: 3px solid #0f6c5c; background-color: #fafafa; padding: 10px; min-height: 80px;">
+              <h3 style="margin: 0 0 6px 0; color: #64748b; font-size: 9pt; font-weight: normal;">Bù công suất phản kháng tổng</h3>
+              <div style="margin: 0 0 4px 0; color: #0f172a; font-size: 12pt; font-weight: bold;">${formatNumber(latestReport.totalKvar, 1, "kVAr")}</div>
+              <p style="margin: 0; color: #475569; font-size: 8.5pt;">MBA: ${formatNumber(latestReport.baseCompKvar, 1, "kVAr")} | Cosφ: ${formatNumber(latestReport.cosCompKvar, 1, "kVAr")}</p>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td style="width: 50%; padding: 8px; vertical-align: top;">
+            <div style="border: 1px solid #cbd5e1; border-top: 3px solid #0f6c5c; background-color: #fafafa; padding: 10px; min-height: 80px;">
+              <h3 style="margin: 0 0 6px 0; color: #64748b; font-size: 9pt; font-weight: normal;">Cuộn kháng & cấp điện áp tụ</h3>
+              <div style="margin: 0 0 4px 0; color: #0f172a; font-size: 12pt; font-weight: bold;">Kháng: ${latestReport.reactorPct} | Tụ: ${latestReport.capVoltage} VAC</div>
+              <p style="margin: 0; color: #475569; font-size: 8.5pt;">Điện áp tính toán: ${latestReport.capVoltageRaw} V</p>
+            </div>
+          </td>
+          <td style="width: 50%; padding: 8px; vertical-align: top;">
+            <div style="border: 1px solid #cbd5e1; border-top: 3px solid ${latestReport.ahfNeeded ? "#c2410c" : "#13795b"}; background-color: #fafafa; padding: 10px; min-height: 80px;">
+              <h3 style="margin: 0 0 6px 0; color: #64748b; font-size: 9pt; font-weight: normal;">Bộ lọc sóng hài tích cực AHF</h3>
+              <div style="margin: 0 0 4px 0; color: #0f172a; font-size: 12pt; font-weight: bold;">${latestReport.ahfNeeded ? "Khuyến nghị: " + formatNumber(latestReport.ahf.recommendedA, 1, "A") : "Chưa bắt buộc lắp AHF"}</div>
+              <p style="margin: 0; color: #475569; font-size: 8.5pt;">${latestReport.ahfNeeded ? `Dung lượng: ${formatNumber(latestReport.ahf.recommendedKva, 1, "kVA")} | Mục tiêu: <${latestReport.ahf.targetThdi}%` : "Mức độ méo hài nằm trong ngưỡng"}</p>
+            </div>
+          </td>
+        </tr>
+      </table>
+
+      <div class="solution-box" style="border: 1.5px solid #0f6c5c; background-color: #f8fafc; padding: 12px; margin-bottom: 25px;">
+        <h3 style="margin: 0 0 4px 0; color: #0f6c5c; font-size: 10pt; font-weight: bold;">GIẢI PHÁP TỔNG THỂ KHUYẾN NGHỊ</h3>
+        <p style="margin: 0; color: #1e293b; font-size: 10.5pt;">${latestReport.solution} | ${latestReport.capModel}</p>
+      </div>
+
+      <h2>IV. ĐÁNH GIÁ CHI TIẾT HỆ THỐNG</h2>
+      <p class="narrative-p" style="margin-bottom: 10px;">${narrativeText[0]}</p>
+      <p class="narrative-p" style="margin-bottom: 10px;">${narrativeText[1]}</p>
+      <p class="narrative-p" style="margin-bottom: 10px;">${narrativeText[2]}</p>
+      <p class="narrative-p" style="margin-bottom: 10px;">${narrativeText[3]}</p>
+      <p class="narrative-p" style="margin-bottom: 10px;">${narrativeText[4]}</p>
+
+      <h2>V. CẢNH BÁO KỸ THUẬT & KHUYẾN NGHỊ</h2>
+      ${warningsHtml}
+
+      <h2 style="margin-top: 25px;">VI. THÀNH PHẦN SÓNG HÀI ĐẶC TRƯNG</h2>
+      <p style="font-size: 10.5pt; margin-bottom: 6px;">Bộ chỉnh lưu ${latestReport.input.rectifierPulse || 0} xung có xu hướng sinh các bậc hài ưu thế phụ thuộc vào sơ đồ đấu nối:</p>
+      <p style="font-size: 11pt; color: #b91c1c; font-weight: bold; margin: 0 0 30px 0;">${latestReport.harmonics.length ? latestReport.harmonics.map(h => `H${h}`).join(", ") : "Không có"}</p>
+
+      <table class="signature-table" style="width: 100%;">
+        <tr>
+          <td style="text-align: center; width: 50%;">
+            <div class="title" style="font-weight: bold; color: #475569;">KỸ SƯ THỰC HIỆN</div>
+            <div class="desc" style="color: #94a3b8; font-size: 8.5pt; margin-bottom: 60px;">(Ký & ghi rõ họ tên)</div>
+            <div class="name" style="font-weight: bold; color: #0f6c5c;">MASTER Advisor System</div>
+          </td>
+          <td style="text-align: center; width: 50%;">
+            <div class="title" style="font-weight: bold; color: #475569;">PHÊ DUYỆT BÁO CÁO</div>
+            <div class="desc" style="color: #94a3b8; font-size: 8.5pt; margin-bottom: 60px;">(Ký, đóng dấu & ghi rõ họ tên)</div>
+            <div class="name" style="font-weight: bold; color: #0f6c5c;">Ban Kỹ thuật & Công nghệ</div>
+          </td>
+        </tr>
+      </table>
+
+      <div class="footer-line" style="border-top: 1px solid #cbd5e1; margin-top: 40px; padding-top: 8px; font-size: 8.5pt; color: #94a3b8;">
+        MASTER Engineering Suite &bull; Báo cáo phát hành tự động &bull; Tài liệu nội bộ.
+      </div>
+    </body>
+    </html>
+  `;
+
+  const blob = new Blob(['\ufeff' + htmlContent], {
+    type: 'application/msword;charset=utf-8'
+  });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `MASTER-report-${Date.now()}.doc`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
 }
 
 function runAnalysis() {
@@ -718,6 +1532,7 @@ function init() {
   form.addEventListener("input", () => runAnalysis());
   form.addEventListener("change", () => runAnalysis());
   exportPdfButton.addEventListener("click", exportPdf);
+  exportWordButton.addEventListener("click", exportWord);
 
   applyProjectPreset(projectSelect.value);
 }
