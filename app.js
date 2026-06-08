@@ -74,9 +74,7 @@ const declaredPctLabel = document.getElementById("declaredPctLabel");
 const nonlinearPctLabel = document.getElementById("nonlinearPctLabel");
 const loadMixHint = document.getElementById("loadMixHint");
 const declaredPctBar = document.getElementById("declaredPctBar");
-const resultColumn = document.getElementById("resultColumn");
-const resultPanelToggle = document.getElementById("resultPanelToggle");
-const layout = document.querySelector(".layout");
+
 
 let latestReport = null;
 
@@ -470,8 +468,6 @@ function renderReport(report) {
   latestReport = report;
   renderInputHealth(report);
 
-  document.getElementById("heroThdi").textContent = formatNumber(report.thdi, 1, "%");
-  document.getElementById("heroSolution").textContent = report.solution;
   document.getElementById("sidebarThdi").textContent = formatNumber(report.thdi, 1, "%");
   document.getElementById("sidebarSolution").textContent = report.solution;
   document.getElementById("summaryMbaKvar").textContent = formatNumber(report.baseCompKvar, 1, "kVAr");
@@ -494,12 +490,22 @@ function renderReport(report) {
   ];
   document.getElementById("analysisNarrative").innerHTML = narrative.map((item) => `<p>${item}</p>`).join("");
 
-  const warningsHtml = report.warnings.map((warning) => `
-    <article class="warning warning--${warning.level}">
-      <h4>${warning.title}</h4>
-      <p>${warning.body}</p>
-    </article>
-  `).join("");
+  const warningsHtml = report.warnings.map((warning) => {
+    let icon = "";
+    if (warning.level === "danger") {
+      icon = `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`;
+    } else if (warning.level === "warning") {
+      icon = `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`;
+    } else {
+      icon = `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><polyline points="20 6 9 17 4 12"/></svg>`;
+    }
+    return `
+      <article class="warning warning--${warning.level}">
+        <h4>${icon}${warning.title}</h4>
+        <p>${warning.body}</p>
+      </article>
+    `;
+  }).join("");
   document.getElementById("warningsList").innerHTML = warningsHtml;
 
   const harmonicPills = report.harmonics.length
@@ -509,25 +515,82 @@ function renderReport(report) {
     <p>Bộ chỉnh lưu ${report.input.rectifierPulse || 0} xung có xu hướng sinh các bậc hài ưu thế:</p>
     <div class="pill-row">${harmonicPills}</div>
   `;
+
+  updateOscilloscope(report);
 }
 
-function setResultPanelOpen(open) {
-  if (window.innerWidth <= 1120) {
-    resultColumn.classList.remove("is-collapsed");
-    resultColumn.style.width = "";
-    layout.style.gridTemplateColumns = "";
-    resultPanelToggle.setAttribute("aria-expanded", "true");
-    return;
+function updateOscilloscope(report) {
+  const scopeWave = document.getElementById("scopeWave");
+  const scopeArea = document.getElementById("scopeArea");
+  const scopeStatus = document.getElementById("scopeStatus");
+  const scopeThdiVal = document.getElementById("scopeThdiVal");
+  const scopeHarmonicsVal = document.getElementById("scopeHarmonicsVal");
+
+  if (!scopeWave || !scopeArea) return;
+
+  const thdiVal = report.thdi || 0;
+  scopeThdiVal.textContent = formatNumber(thdiVal, 1, "%");
+
+  let color = "#13795b"; // default --ok green
+  let bgColor = "#ecfbf5"; // light green
+  let statusText = "ỔN ĐỊNH";
+
+  if (thdiVal > 40) {
+    color = "#c2410c"; // --danger orange/red
+    bgColor = "#fff1ec";
+    statusText = "MÉO DẠNG NẶNG (NGUY HIỂM)";
+  } else if (thdiVal > 25) {
+    color = "#b7791f"; // --warn orange
+    bgColor = "#fff9e8";
+    statusText = "MÉO DẠNG ĐÁNG KỂ";
+  } else if (thdiVal > 15) {
+    color = "#2563eb"; // blue
+    bgColor = "#eef6ff";
+    statusText = "DAO ĐỘNG NHẸ";
   }
-  resultColumn.classList.toggle("is-collapsed", !open);
-  resultColumn.style.width = open ? "360px" : "82px";
-  layout.style.gridTemplateColumns = open ? "minmax(0, 1fr) 360px" : "minmax(0, 1fr) 82px";
-  resultPanelToggle.setAttribute("aria-expanded", String(open));
-  document.querySelector(".result-panel__meta").style.display = open ? "grid" : "none";
-  document.getElementById("resultPanelBody").style.display = open ? "block" : "none";
-  document.querySelector(".result-panel__rail").style.display = open ? "none" : "flex";
-  document.querySelector(".result-panel__collapse-icon").style.transform = open ? "rotate(225deg)" : "rotate(45deg)";
+
+  scopeStatus.textContent = statusText;
+  scopeStatus.style.color = color;
+  scopeStatus.style.backgroundColor = bgColor;
+  scopeWave.style.stroke = color;
+  scopeArea.style.color = color;
+
+  if (report.harmonics && report.harmonics.length) {
+    scopeHarmonicsVal.textContent = report.harmonics.map((h) => `H${h}`).join(", ");
+  } else {
+    scopeHarmonicsVal.textContent = "Không nổi bật";
+  }
+
+  const width = 300;
+  const baseline = 65;
+  const maxAmp = 40;
+
+  const points = [];
+  const d = Math.min((thdiVal / 100) * 1.8, 1.2);
+
+  for (let x = 0; x <= width; x += 3) {
+    const radians = (x / width) * 2 * Math.PI * 2;
+    let y = Math.sin(radians);
+
+    if (d > 0.05) {
+      y += d * 0.28 * Math.sin(3 * radians);
+      y -= d * 0.18 * Math.sin(5 * radians);
+      y += d * 0.12 * Math.sin(7 * radians);
+    }
+
+    const scale = 1 / (1 + d * 0.55);
+    const finalY = baseline - (y * scale * maxAmp);
+    points.push(`${x},${finalY.toFixed(1)}`);
+  }
+
+  const pathD = `M ${points.join(" L ")}`;
+  scopeWave.setAttribute("d", pathD);
+
+  const areaPathD = `M 0 130 L ${points.join(" L ")} L 300 130 Z`;
+  scopeArea.setAttribute("d", areaPathD);
 }
+
+
 
 function getImageDataUrl(image) {
   const canvas = document.createElement("canvas");
@@ -655,17 +718,8 @@ function init() {
   form.addEventListener("input", () => runAnalysis());
   form.addEventListener("change", () => runAnalysis());
   exportPdfButton.addEventListener("click", exportPdf);
-  resultPanelToggle.addEventListener("click", () => {
-    setResultPanelOpen(resultColumn.classList.contains("is-collapsed"));
-  });
-  window.addEventListener("resize", () => {
-    if (window.innerWidth <= 1120) {
-      setResultPanelOpen(false);
-    }
-  });
 
   applyProjectPreset(projectSelect.value);
-  setResultPanelOpen(true);
 }
 
 init();

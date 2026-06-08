@@ -36,18 +36,35 @@
         </div>
       </div>
 
-      <div class="hero__meta-panel">
-        <div class="hero__meta-header">
-          <span>Tóm tắt đánh giá</span>
-        </div>
-        <div class="hero__meta">
-          <div class="metric-chip metric-chip--compact">
-            <span>THDi dự đoán</span>
-            <strong id="heroThdi">--</strong>
+      <div class="hero__visualization">
+        <div class="scope-panel">
+          <div class="scope-panel__header">
+            <span class="scope-panel__title">Mô phỏng dạng sóng THDi</span>
+            <span class="scope-panel__status" id="scopeStatus">ỔN ĐỊNH</span>
           </div>
-          <div class="metric-chip metric-chip--wide">
-            <span>Giải pháp sơ bộ</span>
-            <strong id="heroSolution">--</strong>
+          <div class="scope-screen">
+            <div class="scope-grid"></div>
+            <svg class="scope-svg" viewBox="0 0 300 130">
+              <defs>
+                <linearGradient id="waveAreaGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="currentColor" stop-opacity="0.16" />
+                  <stop offset="100%" stop-color="currentColor" stop-opacity="0.0" />
+                </linearGradient>
+              </defs>
+              <path class="scope-area" id="scopeArea" fill="url(#waveAreaGrad)" d="" />
+              <path class="scope-wave" id="scopeWave" fill="none" d="" />
+            </svg>
+            <div class="scope-glow"></div>
+          </div>
+          <div class="scope-footer">
+            <div class="scope-readout">
+              <span class="scope-readout__label">THDi dự kiến</span>
+              <strong class="scope-readout__value" id="scopeThdiVal">--</strong>
+            </div>
+            <div class="scope-readout">
+              <span class="scope-readout__label">Hài bậc cao</span>
+              <strong class="scope-readout__value" id="scopeHarmonicsVal">Không</strong>
+            </div>
           </div>
         </div>
       </div>
@@ -470,17 +487,13 @@
             </div>
           </article>
 
-          <details class="panel panel--details">
-            <summary>
+          <article class="panel">
+            <div class="panel__header">
               <div>
                 <p class="panel__eyebrow">Nâng cao</p>
                 <h2>Thông số chi tiết và điều kiện đặc biệt</h2>
               </div>
-              <span class="summary-toggle">
-                <span>Thu gọn</span>
-                <span class="summary-toggle__icon" aria-hidden="true"></span>
-              </span>
-            </summary>
+            </div>
 
             <div class="details-body">
               <div class="grid grid--3">
@@ -583,7 +596,7 @@
                 </label>
               </div>
             </div>
-          </details>
+          </article>
 
           <div class="actions actions--sticky">
             <button type="submit" class="button button--primary">Phân tích giải pháp</button>
@@ -599,68 +612,119 @@
               <p class="panel__eyebrow">Kết quả</p>
               <h2>Đề xuất tổng hợp</h2>
             </div>
-            <button type="button" class="result-panel__collapse" id="resultPanelToggle" aria-expanded="true" aria-controls="resultPanelBody" aria-label="Thu gọn bảng kết quả">
-              <span class="result-panel__collapse-icon" aria-hidden="true"></span>
-            </button>
           </div>
 
           <div class="result-panel__meta">
-            <div class="result-panel__meta-item">
-              <span>THDi</span>
-              <strong id="sidebarThdi">--</strong>
+            <div class="result-panel__meta-card result-panel__meta-card--thdi">
+              <div class="result-panel__meta-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+              </div>
+              <div class="result-panel__meta-content">
+                <span>THDi dự kiến</span>
+                <strong id="sidebarThdi">--</strong>
+              </div>
             </div>
-            <div class="result-panel__meta-item">
-              <span>Giải pháp</span>
-              <strong id="sidebarSolution">--</strong>
+            <div class="result-panel__meta-card result-panel__meta-card--solution">
+              <div class="result-panel__meta-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="m9 12 2 2 4-4"/></svg>
+              </div>
+              <div class="result-panel__meta-content">
+                <span>Giải pháp sơ bộ</span>
+                <strong id="sidebarSolution">--</strong>
+              </div>
             </div>
           </div>
 
           <div class="result-panel__body" id="resultPanelBody">
             <div class="summary-grid">
               <div class="summary-card">
-                <span>Công suất bù theo MBA</span>
-                <strong id="summaryMbaKvar">--</strong>
+                <div class="summary-card__icon-shell">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/></svg>
+                </div>
+                <div class="summary-card__content">
+                  <span>Bù theo MBA</span>
+                  <strong id="summaryMbaKvar">--</strong>
+                </div>
               </div>
+
               <div class="summary-card">
-                <span>Nhu cầu bù theo cosphi</span>
-                <strong id="summaryCosKvar">--</strong>
+                <div class="summary-card__icon-shell">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12c4-8 8-8 10 0s6 8 10 0"/></svg>
+                </div>
+                <div class="summary-card__content">
+                  <span>Bù theo cosφ</span>
+                  <strong id="summaryCosKvar">--</strong>
+                </div>
               </div>
-              <div class="summary-card">
-                <span>Dung lượng đề xuất</span>
-                <strong id="summaryTotalKvar">--</strong>
+
+              <div class="summary-card summary-card--highlighted">
+                <div class="summary-card__icon-shell">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                </div>
+                <div class="summary-card__content">
+                  <span>Dung lượng bù</span>
+                  <strong id="summaryTotalKvar">--</strong>
+                </div>
               </div>
-              <div class="summary-card">
-                <span>Cuộn kháng</span>
-                <strong id="summaryReactor">--</strong>
+
+              <div class="summary-card summary-card--highlighted-alt">
+                <div class="summary-card__icon-shell">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v14a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M15 19a3 3 0 0 0 6 0v-6a3 3 0 0 0-6 0"/></svg>
+                </div>
+                <div class="summary-card__content">
+                  <span>Cuộn kháng</span>
+                  <strong id="summaryReactor">--</strong>
+                </div>
               </div>
+
               <div class="summary-card">
-                <span>AHF</span>
-                <strong id="summaryAhf">--</strong>
+                <div class="summary-card__icon-shell">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+                </div>
+                <div class="summary-card__content">
+                  <span>Dung lượng AHF</span>
+                  <strong id="summaryAhf">--</strong>
+                </div>
               </div>
+
               <div class="summary-card">
-                <span>Điện áp tụ</span>
-                <strong id="summaryCapVoltage">--</strong>
+                <div class="summary-card__icon-shell">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 10h-1.25c-.25-1-.75-2-1.5-2.75L16.5 6.5M6 10H4.75c-.25-1-.75-2-1.5-2.75L4.5 6.5M12 2v20M12 12c2.2 0 4-1.8 4-4s-1.8-4-4-4-4 1.8-4 4 1.8 4 4 4z"/></svg>
+                </div>
+                <div class="summary-card__content">
+                  <span>Điện áp tụ</span>
+                  <strong id="summaryCapVoltage">--</strong>
+                </div>
               </div>
             </div>
 
             <div class="result-block">
-              <h3>Phân tích</h3>
-              <div id="analysisNarrative" class="narrative"></div>
+              <h3>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                Phân tích hệ thống
+              </h3>
+              <div class="result-block__widget">
+                <div id="analysisNarrative" class="narrative"></div>
+              </div>
             </div>
 
             <div class="result-block">
-              <h3>Cảnh báo kỹ thuật</h3>
+              <h3>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                Cảnh báo kỹ thuật
+              </h3>
               <div id="warningsList" class="warnings"></div>
             </div>
 
             <div class="result-block">
-              <h3>Bậc hài ưu thế</h3>
-              <div id="harmonicList" class="harmonic-list"></div>
+              <h3>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+                Bậc hài ưu thế
+              </h3>
+              <div class="result-block__widget">
+                <div id="harmonicList" class="harmonic-list"></div>
+              </div>
             </div>
-          </div>
-
-          <div class="result-panel__rail" aria-hidden="true">
-            <span>KQ</span>
           </div>
         </section>
       </aside>
