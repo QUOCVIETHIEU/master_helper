@@ -13,6 +13,21 @@ const PROJECT_RULES = {
   "lo-ho-quang": { label: "Lò hồ quang, lò cảm ứng lớn", baseComp: 0.6, baseThdi: 90, risk: "Cực cao", solutionBias: "14%" },
 };
 
+const PRESET_VALUES = {
+  "nha-o": { transformerKva: 750, loadPowerKw: 500, cosPhiBefore: 0.86, cosPhiTarget: 0.96, motorDirectPct: 12, vfdPct: 12, upsPct: 4, ledPct: 18, hvacPct: 16, rectifierPct: 2, weldingPct: 0, furnacePct: 0, singlePhasePct: 55 },
+  "building": { transformerKva: 1000, loadPowerKw: 850, cosPhiBefore: 0.84, cosPhiTarget: 0.96, motorDirectPct: 18, vfdPct: 18, upsPct: 12, ledPct: 18, hvacPct: 22, rectifierPct: 4, weldingPct: 0, furnacePct: 0, singlePhasePct: 35 },
+  "thuong-mai": { transformerKva: 1250, loadPowerKw: 980, cosPhiBefore: 0.83, cosPhiTarget: 0.96, motorDirectPct: 12, vfdPct: 20, upsPct: 10, ledPct: 20, hvacPct: 24, rectifierPct: 5, weldingPct: 0, furnacePct: 0, singlePhasePct: 45 },
+  "data-center": { transformerKva: 1600, loadPowerKw: 1200, cosPhiBefore: 0.9, cosPhiTarget: 0.98, motorDirectPct: 5, vfdPct: 12, upsPct: 32, ledPct: 18, hvacPct: 18, rectifierPct: 10, weldingPct: 0, furnacePct: 0, singlePhasePct: 28 },
+  "server-room": { transformerKva: 1000, loadPowerKw: 700, cosPhiBefore: 0.89, cosPhiTarget: 0.98, motorDirectPct: 5, vfdPct: 10, upsPct: 28, ledPct: 16, hvacPct: 20, rectifierPct: 8, weldingPct: 0, furnacePct: 0, singlePhasePct: 25 },
+  "co-khi": { transformerKva: 1250, loadPowerKw: 950, cosPhiBefore: 0.82, cosPhiTarget: 0.95, motorDirectPct: 28, vfdPct: 16, upsPct: 2, ledPct: 6, hvacPct: 10, rectifierPct: 6, weldingPct: 10, furnacePct: 0, singlePhasePct: 12 },
+  "nhua-bao-bi": { transformerKva: 1600, loadPowerKw: 1300, cosPhiBefore: 0.8, cosPhiTarget: 0.95, motorDirectPct: 14, vfdPct: 28, upsPct: 2, ledPct: 5, hvacPct: 12, rectifierPct: 8, weldingPct: 3, furnacePct: 12, singlePhasePct: 10 },
+  "det-may": { transformerKva: 1250, loadPowerKw: 980, cosPhiBefore: 0.81, cosPhiTarget: 0.95, motorDirectPct: 18, vfdPct: 24, upsPct: 2, ledPct: 10, hvacPct: 12, rectifierPct: 4, weldingPct: 0, furnacePct: 3, singlePhasePct: 18 },
+  "thuc-pham": { transformerKva: 1250, loadPowerKw: 990, cosPhiBefore: 0.82, cosPhiTarget: 0.95, motorDirectPct: 18, vfdPct: 22, upsPct: 3, ledPct: 7, hvacPct: 20, rectifierPct: 5, weldingPct: 0, furnacePct: 5, singlePhasePct: 15 },
+  "xi-mang": { transformerKva: 2000, loadPowerKw: 1600, cosPhiBefore: 0.81, cosPhiTarget: 0.95, motorDirectPct: 24, vfdPct: 22, upsPct: 2, ledPct: 4, hvacPct: 8, rectifierPct: 8, weldingPct: 6, furnacePct: 6, singlePhasePct: 8 },
+  "thep": { transformerKva: 2500, loadPowerKw: 2100, cosPhiBefore: 0.78, cosPhiTarget: 0.95, motorDirectPct: 12, vfdPct: 20, upsPct: 2, ledPct: 3, hvacPct: 6, rectifierPct: 14, weldingPct: 16, furnacePct: 18, singlePhasePct: 6 },
+  "lo-ho-quang": { transformerKva: 3000, loadPowerKw: 2500, cosPhiBefore: 0.76, cosPhiTarget: 0.95, motorDirectPct: 8, vfdPct: 16, upsPct: 1, ledPct: 2, hvacPct: 4, rectifierPct: 15, weldingPct: 14, furnacePct: 24, singlePhasePct: 4 },
+};
+
 const NONLINEAR_WEIGHTS = {
   motorDirectPct: 0.05,
   vfdPct: 1,
@@ -29,7 +44,120 @@ const STANDARD_CAP_VOLTAGES = [415, 440, 480, 525, 690];
 const form = document.getElementById("analysisForm");
 const exportPdfButton = document.getElementById("exportPdfButton");
 const brandLogo = document.getElementById("brandLogo");
+const projectSelectRaw = form.elements.projectType;
+const projectSelect = {
+  get value() {
+    return projectSelectRaw instanceof RadioNodeList ? projectSelectRaw.value : (projectSelectRaw?.value || "");
+  },
+  set value(val) {
+    if (projectSelectRaw instanceof RadioNodeList) {
+      projectSelectRaw.value = val;
+    } else if (projectSelectRaw) {
+      projectSelectRaw.value = val;
+    }
+  },
+  addEventListener(event, callback) {
+    if (projectSelectRaw instanceof RadioNodeList) {
+      projectSelectRaw.forEach((radio) => {
+        radio.addEventListener(event, callback);
+      });
+    } else if (projectSelectRaw) {
+      projectSelectRaw.addEventListener(event, callback);
+    }
+  }
+};
+const presetButtons = document.querySelectorAll("[data-project-preset]");
+const mirroredInputs = document.querySelectorAll("[data-mirror]");
+const conditionalFields = document.querySelectorAll("[data-show-if]");
+const projectPresetNote = document.getElementById("projectPresetNote");
+const declaredPctLabel = document.getElementById("declaredPctLabel");
+const nonlinearPctLabel = document.getElementById("nonlinearPctLabel");
+const loadMixHint = document.getElementById("loadMixHint");
+const declaredPctBar = document.getElementById("declaredPctBar");
+const resultColumn = document.getElementById("resultColumn");
+const resultPanelToggle = document.getElementById("resultPanelToggle");
+const layout = document.querySelector(".layout");
+
 let latestReport = null;
+
+function toNumber(value, fallback = 0) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+function clamp(value, min, max) {
+  return Math.min(Math.max(value, min), max);
+}
+
+function round(value, digits = 1) {
+  return Number(value.toFixed(digits));
+}
+
+function formatNumber(value, digits = 1, unit = "") {
+  if (!Number.isFinite(value)) return "--";
+  return `${new Intl.NumberFormat("vi-VN", {
+    minimumFractionDigits: value % 1 === 0 ? 0 : digits,
+    maximumFractionDigits: digits,
+  }).format(value)}${unit ? ` ${unit}` : ""}`;
+}
+
+function setFieldValue(name, value) {
+  const field = form.elements[name];
+  if (!field) return;
+  field.value = value;
+  updateMirror(name, value);
+}
+
+function updateMirror(name, value) {
+  const mirror = document.querySelector(`[data-mirror="${name}"]`);
+  if (mirror) mirror.value = value;
+}
+
+function applyProjectPreset(projectType) {
+  const preset = PRESET_VALUES[projectType];
+  const rule = PROJECT_RULES[projectType];
+  if (!preset || !rule) return;
+
+  Object.entries(preset).forEach(([name, value]) => setFieldValue(name, value));
+  projectSelect.value = projectType;
+  if (projectPresetNote) {
+    projectPresetNote.innerHTML = `
+      <h3>${rule.label}</h3>
+      <p>THDi nền ${rule.baseThdi}% • Bù sơ bộ ${rule.baseComp * 100}% MBA</p>
+    `;
+  }
+  runAnalysis();
+}
+
+function syncMirrorsFromForm() {
+  mirroredInputs.forEach((input) => {
+    const name = input.dataset.mirror;
+    input.value = form.elements[name].value;
+  });
+}
+
+function bindMirrors() {
+  mirroredInputs.forEach((input) => {
+    const source = form.elements[input.dataset.mirror];
+    input.addEventListener("input", () => {
+      const value = clamp(toNumber(input.value), 0, 100);
+      source.value = value;
+      input.value = value;
+      runAnalysis();
+    });
+    source.addEventListener("input", () => {
+      input.value = source.value;
+    });
+  });
+}
+
+function updateConditionalFields() {
+  conditionalFields.forEach((field) => {
+    const [name, expected] = field.dataset.showIf.split(":");
+    const visible = form.elements[name]?.value === expected;
+    field.classList.toggle("is-hidden", !visible);
+  });
+}
 
 function readFormData() {
   const data = new FormData(form);
@@ -69,27 +197,6 @@ function readFormData() {
     rapidFluctuation: result.rapidFluctuation === "yes",
     operatingHours: toNumber(result.operatingHours),
   };
-}
-
-function toNumber(value, fallback = 0) {
-  const parsed = Number(value);
-  return Number.isFinite(parsed) ? parsed : fallback;
-}
-
-function clamp(value, min, max) {
-  return Math.min(Math.max(value, min), max);
-}
-
-function round(value, digits = 1) {
-  return Number(value.toFixed(digits));
-}
-
-function formatNumber(value, digits = 1, unit = "") {
-  if (!Number.isFinite(value)) return "--";
-  return `${new Intl.NumberFormat("vi-VN", {
-    minimumFractionDigits: value % 1 === 0 ? 0 : digits,
-    maximumFractionDigits: digits,
-  }).format(value)}${unit ? ` ${unit}` : ""}`;
 }
 
 function nearestCapVoltage(value) {
@@ -339,11 +446,34 @@ function computeReport(input) {
   };
 }
 
+function renderInputHealth(report) {
+  declaredPctLabel.textContent = formatNumber(report.declaredPct, 0, "%");
+  nonlinearPctLabel.textContent = formatNumber(report.nonlinearPct, 1, "%");
+
+  let hint = "Cơ cấu tải hợp lý";
+  if (report.declaredPct < 70) hint = "Thiếu nhóm tải";
+  else if (report.declaredPct > 105) hint = "Có khả năng chồng lắp";
+  else if (report.nonlinearPct > 40) hint = "Phi tuyến rất cao";
+  else if (report.nonlinearPct > 25) hint = "Phi tuyến đáng chú ý";
+  loadMixHint.textContent = hint;
+
+  const width = clamp(report.declaredPct, 0, 120) / 1.2;
+  declaredPctBar.style.width = `${width}%`;
+  declaredPctBar.style.background = report.declaredPct > 105
+    ? "linear-gradient(90deg, #c2410c, #f97316)"
+    : report.declaredPct < 70
+      ? "linear-gradient(90deg, #b7791f, #eab308)"
+      : "linear-gradient(90deg, #0f6c5c, #41b49c)";
+}
+
 function renderReport(report) {
   latestReport = report;
+  renderInputHealth(report);
 
   document.getElementById("heroThdi").textContent = formatNumber(report.thdi, 1, "%");
   document.getElementById("heroSolution").textContent = report.solution;
+  document.getElementById("sidebarThdi").textContent = formatNumber(report.thdi, 1, "%");
+  document.getElementById("sidebarSolution").textContent = report.solution;
   document.getElementById("summaryMbaKvar").textContent = formatNumber(report.baseCompKvar, 1, "kVAr");
   document.getElementById("summaryCosKvar").textContent = formatNumber(report.cosCompKvar, 1, "kVAr");
   document.getElementById("summaryTotalKvar").textContent = formatNumber(report.totalKvar, 1, "kVAr");
@@ -354,13 +484,13 @@ function renderReport(report) {
   document.getElementById("summaryCapVoltage").textContent = `${report.capVoltage} VAC`;
 
   const narrative = [
-    `Loại công trình <strong>${report.rules.label}</strong> được gán mức THDi nền ${formatNumber(report.rules.baseThdi, 0, "%")} theo tài liệu, sau đó điều chỉnh theo tỷ lệ tải phi tuyến quy đổi <strong>${formatNumber(report.nonlinearPct, 1, "%")}</strong>.`,
-    `Công suất bù đề xuất theo MBA đạt <strong>${formatNumber(report.baseCompKvar, 1, "kVAr")}</strong>, trong khi nhu cầu theo cosphi đạt <strong>${formatNumber(report.cosCompKvar, 1, "kVAr")}</strong>. Giá trị chọn sơ bộ là <strong>${formatNumber(report.totalKvar, 1, "kVAr")}</strong>.`,
-    `Dòng định mức MBA xấp xỉ <strong>${formatNumber(report.inA, 1, "A")}</strong>, dòng tải sử dụng <strong>${formatNumber(report.ilA, 1, "A")}</strong>, Isc đánh giá <strong>${formatNumber(report.iscKa, 1, "kA")}</strong>. THDu ước tính <strong>${formatNumber(report.thdu, 1, "%")}</strong> để theo dõi nguy cơ méo điện áp.`,
-    `Giải pháp được đề xuất là <strong>${report.solution}</strong>; ưu tiên <strong>${report.capModel}</strong>, cuộn kháng <strong>${report.reactorPct}</strong>, điện áp tụ không nên thấp hơn <strong>${report.capVoltage} VAC</strong>.`,
+    `Loại công trình <strong>${report.rules.label}</strong> được gán mức THDi nền ${formatNumber(report.rules.baseThdi, 0, "%")} và hệ số bù sơ bộ ${report.rules.baseComp * 100}% công suất MBA.`,
+    `Với cơ cấu tải hiện tại, phần mềm đánh giá tải phi tuyến quy đổi ở mức <strong>${formatNumber(report.nonlinearPct, 1, "%")}</strong> và chọn dung lượng bù sơ bộ <strong>${formatNumber(report.totalKvar, 1, "kVAr")}</strong>.`,
+    `Dòng tải sử dụng khoảng <strong>${formatNumber(report.ilA, 1, "A")}</strong>, Isc đánh giá <strong>${formatNumber(report.iscKa, 1, "kA")}</strong>, THDu ước tính <strong>${formatNumber(report.thdu, 1, "%")}</strong>.`,
+    `Giải pháp đang nghiêng về <strong>${report.solution}</strong>; ưu tiên <strong>${report.capModel}</strong> với điện áp tụ không thấp hơn <strong>${report.capVoltage} VAC</strong>.`,
     report.ahfNeeded
-      ? `Do THDi cao hoặc có tải biến động nặng, cân nhắc AHF mục tiêu THDi sau lọc ${formatNumber(report.ahf.targetThdi, 0, "%")} với công suất sơ bộ <strong>${formatNumber(report.ahf.recommendedA, 1, "A")}</strong> (${formatNumber(report.ahf.recommendedKva, 1, "kVA")}).`
-      : "Cấu hình hiện tại chưa bắt buộc AHF, tuy nhiên vẫn nên đo PQ thực tế sau khi vận hành nếu dự án có load profile biến thiên.",
+      ? `Do rủi ro hài cao, nên cân nhắc AHF mục tiêu THDi sau lọc ${formatNumber(report.ahf.targetThdi, 0, "%")} với sizing sơ bộ <strong>${formatNumber(report.ahf.recommendedA, 1, "A")}</strong> (${formatNumber(report.ahf.recommendedKva, 1, "kVA")}).`
+      : "Cấu hình hiện tại chưa bắt buộc AHF, nhưng vẫn nên đo PQ thực tế khi dự án đi vào vận hành.",
   ];
   document.getElementById("analysisNarrative").innerHTML = narrative.map((item) => `<p>${item}</p>`).join("");
 
@@ -379,6 +509,24 @@ function renderReport(report) {
     <p>Bộ chỉnh lưu ${report.input.rectifierPulse || 0} xung có xu hướng sinh các bậc hài ưu thế:</p>
     <div class="pill-row">${harmonicPills}</div>
   `;
+}
+
+function setResultPanelOpen(open) {
+  if (window.innerWidth <= 1120) {
+    resultColumn.classList.remove("is-collapsed");
+    resultColumn.style.width = "";
+    layout.style.gridTemplateColumns = "";
+    resultPanelToggle.setAttribute("aria-expanded", "true");
+    return;
+  }
+  resultColumn.classList.toggle("is-collapsed", !open);
+  resultColumn.style.width = open ? "360px" : "82px";
+  layout.style.gridTemplateColumns = open ? "minmax(0, 1fr) 360px" : "minmax(0, 1fr) 82px";
+  resultPanelToggle.setAttribute("aria-expanded", String(open));
+  document.querySelector(".result-panel__meta").style.display = open ? "grid" : "none";
+  document.getElementById("resultPanelBody").style.display = open ? "block" : "none";
+  document.querySelector(".result-panel__rail").style.display = open ? "none" : "flex";
+  document.querySelector(".result-panel__collapse-icon").style.transform = open ? "rotate(225deg)" : "rotate(45deg)";
 }
 
 function getImageDataUrl(image) {
@@ -410,24 +558,24 @@ async function exportPdf() {
 
   doc.setFont("helvetica", "normal");
   doc.setFontSize(10);
-  doc.text(`Loại công trình: ${latestReport.rules.label}`, left, y);
+  doc.text(`Loai cong trinh: ${latestReport.rules.label}`, left, y);
   y += 6;
-  doc.text(`Ngày xuất: ${new Date().toLocaleString("vi-VN")}`, left, y);
+  doc.text(`Ngay xuat: ${new Date().toLocaleString("vi-VN")}`, left, y);
   y += 10;
 
   const lines = [
-    `Công suất MBA tổng: ${formatNumber(latestReport.totalTransformerKva, 1, "kVA")}`,
-    `Công suất bù theo MBA: ${formatNumber(latestReport.baseCompKvar, 1, "kVAr")}`,
-    `Công suất bù theo cosphi: ${formatNumber(latestReport.cosCompKvar, 1, "kVAr")}`,
-    `Dung lượng đề xuất: ${formatNumber(latestReport.totalKvar, 1, "kVAr")}`,
-    `THDi / THDu dự đoán: ${formatNumber(latestReport.thdi, 1, "%")} / ${formatNumber(latestReport.thdu, 1, "%")}`,
-    `Cuộn kháng đề xuất: ${latestReport.reactorPct}`,
-    `Điện áp tụ đề xuất: ${latestReport.capVoltage} VAC`,
-    `Loại tụ phù hợp: ${latestReport.capModel}`,
+    `Cong suat MBA tong: ${formatNumber(latestReport.totalTransformerKva, 1, "kVA")}`,
+    `Cong suat bu theo MBA: ${formatNumber(latestReport.baseCompKvar, 1, "kVAr")}`,
+    `Cong suat bu theo cosphi: ${formatNumber(latestReport.cosCompKvar, 1, "kVAr")}`,
+    `Dung luong de xuat: ${formatNumber(latestReport.totalKvar, 1, "kVAr")}`,
+    `THDi / THDu du doan: ${formatNumber(latestReport.thdi, 1, "%")} / ${formatNumber(latestReport.thdu, 1, "%")}`,
+    `Cuon khang de xuat: ${latestReport.reactorPct}`,
+    `Dien ap tu de xuat: ${latestReport.capVoltage} VAC`,
+    `Loai tu phu hop: ${latestReport.capModel}`,
     latestReport.ahfNeeded
-      ? `AHF đề xuất: ${formatNumber(latestReport.ahf.recommendedA, 1, "A")} (${formatNumber(latestReport.ahf.recommendedKva, 1, "kVA")})`
-      : "AHF đề xuất: Chưa bắt buộc",
-    `Giải pháp tổng thể: ${latestReport.solution}`,
+      ? `AHF de xuat: ${formatNumber(latestReport.ahf.recommendedA, 1, "A")} (${formatNumber(latestReport.ahf.recommendedKva, 1, "kVA")})`
+      : "AHF de xuat: Chua bat buoc",
+    `Giai phap tong the: ${latestReport.solution}`,
   ];
 
   lines.forEach((line) => {
@@ -438,7 +586,7 @@ async function exportPdf() {
 
   y += 4;
   doc.setFont("helvetica", "bold");
-  doc.text("Cảnh báo kỹ thuật", left, y);
+  doc.text("Canh bao ky thuat", left, y);
   y += 6;
   doc.setFont("helvetica", "normal");
 
@@ -457,20 +605,42 @@ async function exportPdf() {
 }
 
 function runAnalysis() {
+  updateConditionalFields();
   const input = readFormData();
   const report = computeReport(input);
   renderReport(report);
 }
 
-form.addEventListener("submit", (event) => {
-  event.preventDefault();
-  runAnalysis();
-});
+function init() {
+  bindMirrors();
+  syncMirrorsFromForm();
+  updateConditionalFields();
 
-form.addEventListener("input", () => {
-  runAnalysis();
-});
+  presetButtons.forEach((button) => {
+    button.addEventListener("click", () => applyProjectPreset(button.dataset.projectPreset));
+  });
 
-exportPdfButton.addEventListener("click", exportPdf);
+  projectSelect.addEventListener("change", () => applyProjectPreset(projectSelect.value));
 
-runAnalysis();
+  form.addEventListener("submit", (event) => {
+    event.preventDefault();
+    runAnalysis();
+  });
+
+  form.addEventListener("input", () => runAnalysis());
+  form.addEventListener("change", () => runAnalysis());
+  exportPdfButton.addEventListener("click", exportPdf);
+  resultPanelToggle.addEventListener("click", () => {
+    setResultPanelOpen(resultColumn.classList.contains("is-collapsed"));
+  });
+  window.addEventListener("resize", () => {
+    if (window.innerWidth <= 1120) {
+      setResultPanelOpen(false);
+    }
+  });
+
+  applyProjectPreset(projectSelect.value);
+  setResultPanelOpen(true);
+}
+
+init();

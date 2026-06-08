@@ -10,27 +10,45 @@
   <link rel="stylesheet" href="./assets/style.css">
 </head>
 <body>
-  <div class="page-shell">
+  <div class="page-shell" id="pageShell">
     <header class="hero">
-      <div class="hero__brand">
-        <img src="./assets/logo.png" alt="MASTER logo" class="hero__logo" id="brandLogo">
-        <div>
-          <p class="eyebrow">Phần mềm gợi ý giải pháp tụ bù</p>
-          <h1>MASTER Capacitor, Reactor & AHF Advisor</h1>
+      <div class="hero__main">
+        <div class="hero__brand">
+          <div class="hero__logo-shell">
+            <img src="./assets/logo.png" alt="MASTER logo" class="hero__logo" id="brandLogo">
+          </div>
+          <div class="hero__brand-copy">
+            <p class="eyebrow">Master Engineering Suite</p>
+            <div class="hero__brand-line"></div>
+            <span class="hero__caption">Tụ bù • Cuộn kháng • AHF</span>
+          </div>
+        </div>
+
+        <div class="hero__content">
+          <div class="hero__heading">
+            <span class="hero__kicker">Cấu hình kỹ thuật hệ thống điện</span>
+            <h1>MASTER Capacitor, Reactor & AHF Advisor</h1>
+          </div>
           <p class="hero__lead">
-            Khai báo thông số hệ thống, phân bố tải và mục tiêu cosphi để nhận đề xuất công suất bù,
-            cuộn kháng, AHF và cảnh báo kỹ thuật có giải thích rõ nguyên nhân.
+            Công cụ khai báo và phân tích sơ bộ cho kỹ sư bán hàng, thiết kế và giải pháp điện năng,
+            tập trung vào sizing bù công suất phản kháng, đánh giá rủi ro sóng hài và đề xuất cấu hình lọc phù hợp.
           </p>
         </div>
       </div>
-      <div class="hero__meta">
-        <div class="metric-chip">
-          <span>THDi dự đoán</span>
-          <strong id="heroThdi">--</strong>
+
+      <div class="hero__meta-panel">
+        <div class="hero__meta-header">
+          <span>Tóm tắt đánh giá</span>
         </div>
-        <div class="metric-chip">
-          <span>Giải pháp sơ bộ</span>
-          <strong id="heroSolution">--</strong>
+        <div class="hero__meta">
+          <div class="metric-chip metric-chip--compact">
+            <span>THDi dự đoán</span>
+            <strong id="heroThdi">--</strong>
+          </div>
+          <div class="metric-chip metric-chip--wide">
+            <span>Giải pháp sơ bộ</span>
+            <strong id="heroSolution">--</strong>
+          </div>
         </div>
       </div>
     </header>
@@ -38,32 +56,205 @@
     <main class="layout">
       <section class="form-column">
         <form id="analysisForm" class="stack">
+          <article class="panel panel--intro">
+            <div class="panel__header">
+              <div>
+                <p class="panel__eyebrow">Bước 1</p>
+                <h2>Chọn loại dự án</h2>
+              </div>
+            </div>
+
+            <div class="project-groups">
+              <div class="project-group">
+                <h3 class="project-group__title">Dân dụng & Dịch vụ</h3>
+                <div class="project-grid">
+                  <label class="radio-card">
+                    <input type="radio" name="projectType" value="nha-o" checked>
+                    <span class="radio-card__inner">
+                      <span class="radio-card__icon">
+                        <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                      </span>
+                      <span class="radio-card__content">
+                        <span class="radio-card__label">Nhà ở, chung cư</span>
+                        <span class="radio-card__metrics">THDi: 15% • cosφ: 0.86 → 0.96</span>
+                      </span>
+                    </span>
+                  </label>
+
+                  <label class="radio-card">
+                    <input type="radio" name="projectType" value="building">
+                    <span class="radio-card__inner">
+                      <span class="radio-card__icon">
+                        <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2" ry="2"/><line x1="9" y1="22" x2="9" y2="16"/><line x1="15" y1="22" x2="15" y2="16"/><line x1="9" y1="16" x2="15" y2="16"/><path d="M8 6h2v2H8V6zm0 4h2v2H8v-2zm8-4h2v2h-2V6zm0 4h2v2h-2v-2zM8 14h2v2H8v-2zm8 0h2v2h-2v-2z"/></svg>
+                      </span>
+                      <span class="radio-card__content">
+                        <span class="radio-card__label">Building văn phòng</span>
+                        <span class="radio-card__metrics">THDi: 30% • cosφ: 0.84 → 0.96</span>
+                      </span>
+                    </span>
+                  </label>
+
+                  <label class="radio-card">
+                    <input type="radio" name="projectType" value="thuong-mai">
+                    <span class="radio-card__inner">
+                      <span class="radio-card__icon">
+                        <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+                      </span>
+                      <span class="radio-card__content">
+                        <span class="radio-card__label">TT thương mại</span>
+                        <span class="radio-card__metrics">THDi: 35% • cosφ: 0.83 → 0.96</span>
+                      </span>
+                    </span>
+                  </label>
+
+                  <label class="radio-card">
+                    <input type="radio" name="projectType" value="data-center">
+                    <span class="radio-card__inner">
+                      <span class="radio-card__icon">
+                        <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"/><rect x="2" y="14" width="20" height="8" rx="2" ry="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>
+                      </span>
+                      <span class="radio-card__content">
+                        <span class="radio-card__label">Data center</span>
+                        <span class="radio-card__metrics">THDi: 45% • cosφ: 0.90 → 0.98</span>
+                      </span>
+                    </span>
+                  </label>
+
+                  <label class="radio-card">
+                    <input type="radio" name="projectType" value="server-room">
+                    <span class="radio-card__inner">
+                      <span class="radio-card__icon">
+                        <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="18" rx="2" ry="2"/><line x1="2" y1="9" x2="22" y2="9"/><line x1="2" y1="15" x2="22" y2="15"/><circle cx="6" cy="6" r="1"/><circle cx="6" cy="12" r="1"/><circle cx="6" cy="18" r="1"/></svg>
+                      </span>
+                      <span class="radio-card__content">
+                        <span class="radio-card__label">Phòng server lớn</span>
+                        <span class="radio-card__metrics">THDi: 40% • cosφ: 0.89 → 0.98</span>
+                      </span>
+                    </span>
+                  </label>
+                </div>
+              </div>
+
+              <div class="project-group">
+                <h3 class="project-group__title">Sản xuất & Công nghiệp</h3>
+                <div class="project-grid">
+                  <label class="radio-card">
+                    <input type="radio" name="projectType" value="co-khi">
+                    <span class="radio-card__inner">
+                      <span class="radio-card__icon">
+                        <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                      </span>
+                      <span class="radio-card__content">
+                        <span class="radio-card__label">Nhà máy cơ khí</span>
+                        <span class="radio-card__metrics">THDi: 30% • cosφ: 0.82 → 0.95</span>
+                      </span>
+                    </span>
+                  </label>
+
+                  <label class="radio-card">
+                    <input type="radio" name="projectType" value="nhua-bao-bi">
+                    <span class="radio-card__inner">
+                      <span class="radio-card__icon">
+                        <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+                      </span>
+                      <span class="radio-card__content">
+                        <span class="radio-card__label">Nhựa / bao bì</span>
+                        <span class="radio-card__metrics">THDi: 40% • cosφ: 0.80 → 0.95</span>
+                      </span>
+                    </span>
+                  </label>
+
+                  <label class="radio-card">
+                    <input type="radio" name="projectType" value="det-may">
+                    <span class="radio-card__inner">
+                      <span class="radio-card__icon">
+                        <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22a7 7 0 0 0 7-7c0-4.3-7-11-7-11S5 10.7 5 15a7 7 0 0 0 7 7z"/><circle cx="12" cy="15" r="2"/></svg>
+                      </span>
+                      <span class="radio-card__content">
+                        <span class="radio-card__label">Nhà máy dệt, may</span>
+                        <span class="radio-card__metrics">THDi: 35% • cosφ: 0.81 → 0.95</span>
+                      </span>
+                    </span>
+                  </label>
+
+                  <label class="radio-card">
+                    <input type="radio" name="projectType" value="thuc-pham">
+                    <span class="radio-card__inner">
+                      <span class="radio-card__icon">
+                        <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 3.5 1 9.8a7 7 0 0 1-9 8.2zm0 0v-5"/></svg>
+                      </span>
+                      <span class="radio-card__content">
+                        <span class="radio-card__label">Thực phẩm, thủy sản</span>
+                        <span class="radio-card__metrics">THDi: 35% • cosφ: 0.82 → 0.95</span>
+                      </span>
+                    </span>
+                  </label>
+
+                  <label class="radio-card">
+                    <input type="radio" name="projectType" value="xi-mang">
+                    <span class="radio-card__inner">
+                      <span class="radio-card__icon">
+                        <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 7 8.5 19.5M16.5 2.5 21.5 7.5M12 7l5 5M8.5 19.5 4.5 15.5"/></svg>
+                      </span>
+                      <span class="radio-card__content">
+                        <span class="radio-card__label">Xi măng, khai khoáng</span>
+                        <span class="radio-card__metrics">THDi: 40% • cosφ: 0.81 → 0.95</span>
+                      </span>
+                    </span>
+                  </label>
+
+                  <label class="radio-card">
+                    <input type="radio" name="projectType" value="thep">
+                    <span class="radio-card__inner">
+                      <span class="radio-card__icon">
+                        <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>
+                      </span>
+                      <span class="radio-card__content">
+                        <span class="radio-card__label">Thép, luyện kim</span>
+                        <span class="radio-card__metrics">THDi: 70% • cosφ: 0.78 → 0.95</span>
+                      </span>
+                    </span>
+                  </label>
+
+                  <label class="radio-card">
+                    <input type="radio" name="projectType" value="lo-ho-quang">
+                    <span class="radio-card__inner">
+                      <span class="radio-card__icon">
+                        <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                      </span>
+                      <span class="radio-card__content">
+                        <span class="radio-card__label">Lò hồ quang lớn</span>
+                        <span class="radio-card__metrics">THDi: 90% • cosφ: 0.76 → 0.95</span>
+                      </span>
+                    </span>
+                  </label>
+                </div>
+              </div>
+            </div>
+          </article>
+
           <article class="panel">
             <div class="panel__header">
               <div>
-                <p class="panel__eyebrow">Nhóm 1</p>
-                <h2>Thông tin hệ thống điện</h2>
+                <p class="panel__eyebrow">Bước 2</p>
+                <h2>Thông số cốt lõi</h2>
               </div>
-              <p class="panel__hint">Nhập các thông số nền tảng để phần mềm tính dòng danh định mức, ngắn mạch và công suất bù.</p>
             </div>
 
             <div class="grid grid--2">
               <label class="field">
-                <span>Loại công trình</span>
-                <select name="projectType" required>
-                  <option value="nha-o">Nhà ở, chung cư để ở</option>
-                  <option value="building">Building văn phòng</option>
-                  <option value="thuong-mai">Trung tâm thương mại</option>
-                  <option value="data-center">Data center</option>
-                  <option value="server-room">Phòng server lớn</option>
-                  <option value="co-khi">Nhà máy cơ khí thông thường</option>
-                  <option value="nhua-bao-bi">Nhà máy nhựa, bao bì</option>
-                  <option value="det-may">Nhà máy dệt, may</option>
-                  <option value="thuc-pham">Nhà máy thực phẩm, thủy sản</option>
-                  <option value="xi-mang">Nhà máy xi măng, khai khoáng</option>
-                  <option value="thep">Nhà máy thép, luyện kim</option>
-                  <option value="lo-ho-quang">Lò hồ quang, lò cảm ứng lớn</option>
-                </select>
+                <span>Công suất 1 MBA (kVA)</span>
+                <input type="number" name="transformerKva" value="1000" min="0" step="1" required>
+              </label>
+
+              <label class="field">
+                <span>Số MBA vận hành song song</span>
+                <input type="number" name="parallelTransformers" value="1" min="1" step="1">
+              </label>
+
+              <label class="field">
+                <span>Công suất tải tổng (kW)</span>
+                <input type="number" name="loadPowerKw" value="850" min="0" step="1" required>
               </label>
 
               <label class="field">
@@ -76,68 +267,6 @@
               </label>
 
               <label class="field">
-                <span>Điện áp định mức (V)</span>
-                <select name="ratedVoltage">
-                  <option value="380">380</option>
-                  <option value="400" selected>400</option>
-                  <option value="415">415</option>
-                  <option value="440">440</option>
-                  <option value="480">480</option>
-                </select>
-              </label>
-
-              <label class="field">
-                <span>Tần số (Hz)</span>
-                <select name="frequency">
-                  <option value="50" selected>50</option>
-                  <option value="60">60</option>
-                </select>
-              </label>
-
-              <label class="field">
-                <span>Sơ đồ điện</span>
-                <select name="wiring">
-                  <option value="3P3W">3P3W</option>
-                  <option value="3P4W" selected>3P4W</option>
-                </select>
-              </label>
-
-              <label class="field">
-                <span>Số MBA vận hành song song</span>
-                <input type="number" name="parallelTransformers" value="1" min="1" step="1">
-              </label>
-
-              <label class="field">
-                <span>Công suất 1 MBA (kVA)</span>
-                <input type="number" name="transformerKva" value="1000" min="0" step="1" required>
-              </label>
-
-              <label class="field">
-                <span>Uk% MBA</span>
-                <input type="number" name="ukPercent" value="6" min="0" step="0.1">
-              </label>
-
-              <label class="field">
-                <span>Isc tại điểm đấu nối (kA)</span>
-                <input type="number" name="iscKa" placeholder="Bỏ trống để tự tính gần đúng" min="0" step="0.1">
-              </label>
-
-              <label class="field">
-                <span>Công suất tải tổng (kW)</span>
-                <input type="number" name="loadPowerKw" value="850" min="0" step="1" required>
-              </label>
-
-              <label class="field">
-                <span>Hệ số sử dụng Ku</span>
-                <input type="number" name="ku" value="0.85" min="0" max="1.5" step="0.01">
-              </label>
-
-              <label class="field">
-                <span>Dòng tải IL (A)</span>
-                <input type="number" name="loadCurrentA" placeholder="Bỏ trống để tính từ Ku x In" min="0" step="0.1">
-              </label>
-
-              <label class="field">
                 <span>cosphi trước bù</span>
                 <input type="number" name="cosPhiBefore" value="0.84" min="0.4" max="1" step="0.01">
               </label>
@@ -146,179 +275,311 @@
                 <span>cosphi mục tiêu</span>
                 <input type="number" name="cosPhiTarget" value="0.96" min="0.8" max="1" step="0.01">
               </label>
-
-              <label class="field field--toggle">
-                <span>Có máy phát</span>
-                <select name="hasGenerator">
-                  <option value="no" selected>Không</option>
-                  <option value="yes">Có</option>
-                </select>
-              </label>
-
-              <label class="field">
-                <span>Công suất máy phát (kVA)</span>
-                <input type="number" name="generatorKva" value="0" min="0" step="1">
-              </label>
-
-              <label class="field field--toggle">
-                <span>Có solar inverter</span>
-                <select name="hasSolar">
-                  <option value="no" selected>Không</option>
-                  <option value="yes">Có</option>
-                </select>
-              </label>
-
-              <label class="field">
-                <span>Công suất solar inverter (kW)</span>
-                <input type="number" name="solarKw" value="0" min="0" step="1">
-              </label>
             </div>
           </article>
 
           <article class="panel">
             <div class="panel__header">
               <div>
-                <p class="panel__eyebrow">Nhóm 2</p>
-                <h2>Phân bố tải và nguồn sinh hài</h2>
-              </div>
-              <p class="panel__hint">Nhập tỷ lệ trên tổng tải. Các nhóm được gom theo mức độ gây sóng hài để dễ thao tác và kiểm soát.</p>
-            </div>
-
-            <div class="subpanel">
-              <h3>Tải động lực và điều khiển</h3>
-              <div class="grid grid--3">
-                <label class="field">
-                  <span>Motor chạy trực tiếp (%)</span>
-                  <input type="number" name="motorDirectPct" value="25" min="0" max="100" step="1">
-                </label>
-                <label class="field">
-                  <span>Biến tần VFD (%)</span>
-                  <input type="number" name="vfdPct" value="20" min="0" max="100" step="1">
-                </label>
-                <label class="field">
-                  <span>Chiller / AHU / bơm / quạt (%)</span>
-                  <input type="number" name="hvacPct" value="20" min="0" max="100" step="1">
-                </label>
+                <p class="panel__eyebrow">Bước 3</p>
+                <h2>Phân bố tải trực quan</h2>
               </div>
             </div>
 
-            <div class="subpanel">
-              <h3>Tải điện tử và văn phòng</h3>
-              <div class="grid grid--3">
-                <label class="field">
-                  <span>UPS (%)</span>
-                  <input type="number" name="upsPct" value="10" min="0" max="100" step="1">
-                </label>
-                <label class="field">
-                  <span>LED / SMPS / server (%)</span>
-                  <input type="number" name="ledPct" value="15" min="0" max="100" step="1">
-                </label>
-                <label class="field">
-                  <span>Tải 1 pha trên tổng tải (%)</span>
-                  <input type="number" name="singlePhasePct" value="30" min="0" max="100" step="1">
-                </label>
+            <div class="load-status">
+              <div class="load-status__header">
+                <div class="status-card">
+                  <span>Tổng tỷ lệ đã khai báo</span>
+                  <strong id="declaredPctLabel">--</strong>
+                </div>
+                <div class="status-card">
+                  <span>Tải phi tuyến quy đổi</span>
+                  <strong id="nonlinearPctLabel">--</strong>
+                </div>
+                <div class="status-card">
+                  <span>Đánh giá nhập liệu</span>
+                  <strong id="loadMixHint">--</strong>
+                </div>
+              </div>
+              <div class="progress-track">
+                <div id="declaredPctBar" class="progress-bar"></div>
               </div>
             </div>
 
             <div class="subpanel">
-              <h3>Tải công nghiệp phi tuyến nặng</h3>
-              <div class="grid grid--3">
-                <label class="field">
-                  <span>Chỉnh lưu AC/DC (%)</span>
-                  <input type="number" name="rectifierPct" value="5" min="0" max="100" step="1">
+              <h3>Nhóm tải chính</h3>
+              <div class="slider-stack">
+                <label class="slider-field">
+                  <div class="slider-field__head">
+                    <span>Motor chạy trực tiếp</span>
+                    <input type="number" value="25" min="0" max="100" step="1" data-mirror="motorDirectPct">
+                  </div>
+                  <input type="range" name="motorDirectPct" value="25" min="0" max="100" step="1">
                 </label>
-                <label class="field">
-                  <span>Máy hàn (%)</span>
-                  <input type="number" name="weldingPct" value="0" min="0" max="100" step="1">
+
+                <label class="slider-field">
+                  <div class="slider-field__head">
+                    <span>Biến tần VFD</span>
+                    <input type="number" value="20" min="0" max="100" step="1" data-mirror="vfdPct">
+                  </div>
+                  <input type="range" name="vfdPct" value="20" min="0" max="100" step="1">
                 </label>
-                <label class="field">
-                  <span>Lò nhiệt / lò cảm ứng / lò hồ quang (%)</span>
-                  <input type="number" name="furnacePct" value="0" min="0" max="100" step="1">
+
+                <label class="slider-field">
+                  <div class="slider-field__head">
+                    <span>UPS</span>
+                    <input type="number" value="10" min="0" max="100" step="1" data-mirror="upsPct">
+                  </div>
+                  <input type="range" name="upsPct" value="10" min="0" max="100" step="1">
+                </label>
+
+                <label class="slider-field">
+                  <div class="slider-field__head">
+                    <span>LED / SMPS / server</span>
+                    <input type="number" value="15" min="0" max="100" step="1" data-mirror="ledPct">
+                  </div>
+                  <input type="range" name="ledPct" value="15" min="0" max="100" step="1">
+                </label>
+
+                <label class="slider-field">
+                  <div class="slider-field__head">
+                    <span>Chiller / AHU / bơm / quạt</span>
+                    <input type="number" value="20" min="0" max="100" step="1" data-mirror="hvacPct">
+                  </div>
+                  <input type="range" name="hvacPct" value="20" min="0" max="100" step="1">
                 </label>
               </div>
             </div>
 
-            <div class="grid grid--3">
-              <label class="field">
-                <span>Số xung chỉnh lưu chính</span>
-                <select name="rectifierPulse">
-                  <option value="0">Không đáng kể</option>
-                  <option value="6" selected>6 pulse</option>
-                  <option value="12">12 pulse</option>
-                  <option value="18">18 pulse</option>
-                </select>
-              </label>
-              <label class="field">
-                <span>Tải biến động nhanh</span>
-                <select name="rapidFluctuation">
-                  <option value="no" selected>Không</option>
-                  <option value="yes">Có</option>
-                </select>
-              </label>
-              <label class="field">
-                <span>Thời gian vận hành (giờ/ngày)</span>
-                <input type="number" name="operatingHours" value="16" min="0" max="24" step="1">
-              </label>
+            <div class="subpanel">
+              <h3>Nguồn hài nặng và tải 1 pha</h3>
+              <div class="slider-stack">
+                <label class="slider-field">
+                  <div class="slider-field__head">
+                    <span>Chỉnh lưu AC/DC</span>
+                    <input type="number" value="5" min="0" max="100" step="1" data-mirror="rectifierPct">
+                  </div>
+                  <input type="range" name="rectifierPct" value="5" min="0" max="100" step="1">
+                </label>
+
+                <label class="slider-field">
+                  <div class="slider-field__head">
+                    <span>Máy hàn</span>
+                    <input type="number" value="0" min="0" max="100" step="1" data-mirror="weldingPct">
+                  </div>
+                  <input type="range" name="weldingPct" value="0" min="0" max="100" step="1">
+                </label>
+
+                <label class="slider-field">
+                  <div class="slider-field__head">
+                    <span>Lò nhiệt / lò cảm ứng / lò hồ quang</span>
+                    <input type="number" value="0" min="0" max="100" step="1" data-mirror="furnacePct">
+                  </div>
+                  <input type="range" name="furnacePct" value="0" min="0" max="100" step="1">
+                </label>
+
+                <label class="slider-field">
+                  <div class="slider-field__head">
+                    <span>Tải 1 pha trên tổng tải</span>
+                    <input type="number" value="30" min="0" max="100" step="1" data-mirror="singlePhasePct">
+                  </div>
+                  <input type="range" name="singlePhasePct" value="30" min="0" max="100" step="1">
+                </label>
+              </div>
             </div>
           </article>
 
-          <div class="actions">
+          <details class="panel panel--details">
+            <summary>
+              <div>
+                <p class="panel__eyebrow">Nâng cao</p>
+                <h2>Thông số chi tiết và điều kiện đặc biệt</h2>
+              </div>
+              <span class="summary-toggle">
+                <span>Thu gọn</span>
+                <span class="summary-toggle__icon" aria-hidden="true"></span>
+              </span>
+            </summary>
+
+            <div class="details-body">
+              <div class="grid grid--3">
+                <label class="field">
+                  <span>Điện áp định mức (V)</span>
+                  <select name="ratedVoltage">
+                    <option value="380">380</option>
+                    <option value="400" selected>400</option>
+                    <option value="415">415</option>
+                    <option value="440">440</option>
+                    <option value="480">480</option>
+                  </select>
+                </label>
+
+                <label class="field">
+                  <span>Tần số (Hz)</span>
+                  <select name="frequency">
+                    <option value="50" selected>50</option>
+                    <option value="60">60</option>
+                  </select>
+                </label>
+
+                <label class="field">
+                  <span>Sơ đồ điện</span>
+                  <select name="wiring">
+                    <option value="3P3W">3P3W</option>
+                    <option value="3P4W" selected>3P4W</option>
+                  </select>
+                </label>
+
+                <label class="field">
+                  <span>Uk% MBA</span>
+                  <input type="number" name="ukPercent" value="6" min="0" step="0.1">
+                </label>
+
+                <label class="field">
+                  <span>Isc tại điểm đấu nối (kA)</span>
+                  <input type="number" name="iscKa" placeholder="Bỏ trống để tự tính gần đúng" min="0" step="0.1">
+                </label>
+
+                <label class="field">
+                  <span>Hệ số sử dụng Ku</span>
+                  <input type="number" name="ku" value="0.85" min="0" max="1.5" step="0.01">
+                </label>
+
+                <label class="field">
+                  <span>Dòng tải IL (A)</span>
+                  <input type="number" name="loadCurrentA" placeholder="Bỏ trống để tính từ Ku x In" min="0" step="0.1">
+                </label>
+
+                <label class="field">
+                  <span>Số xung chỉnh lưu chính</span>
+                  <select name="rectifierPulse">
+                    <option value="0">Không đáng kể</option>
+                    <option value="6" selected>6 pulse</option>
+                    <option value="12">12 pulse</option>
+                    <option value="18">18 pulse</option>
+                  </select>
+                </label>
+
+                <label class="field">
+                  <span>Thời gian vận hành (giờ/ngày)</span>
+                  <input type="number" name="operatingHours" value="16" min="0" max="24" step="1">
+                </label>
+              </div>
+
+              <div class="grid grid--3">
+                <label class="field">
+                  <span>Tải biến động nhanh</span>
+                  <select name="rapidFluctuation">
+                    <option value="no" selected>Không</option>
+                    <option value="yes">Có</option>
+                  </select>
+                </label>
+
+                <label class="field">
+                  <span>Có máy phát</span>
+                  <select name="hasGenerator">
+                    <option value="no" selected>Không</option>
+                    <option value="yes">Có</option>
+                  </select>
+                </label>
+
+                <label class="field conditional-field" data-show-if="hasGenerator:yes">
+                  <span>Công suất máy phát (kVA)</span>
+                  <input type="number" name="generatorKva" value="0" min="0" step="1">
+                </label>
+
+                <label class="field">
+                  <span>Có solar inverter</span>
+                  <select name="hasSolar">
+                    <option value="no" selected>Không</option>
+                    <option value="yes">Có</option>
+                  </select>
+                </label>
+
+                <label class="field conditional-field" data-show-if="hasSolar:yes">
+                  <span>Công suất solar inverter (kW)</span>
+                  <input type="number" name="solarKw" value="0" min="0" step="1">
+                </label>
+              </div>
+            </div>
+          </details>
+
+          <div class="actions actions--sticky">
             <button type="submit" class="button button--primary">Phân tích giải pháp</button>
             <button type="button" id="exportPdfButton" class="button button--ghost">Xuất báo cáo PDF</button>
           </div>
         </form>
       </section>
 
-      <aside class="result-column">
-        <section class="panel panel--sticky">
-          <div class="panel__header">
+      <aside class="result-sidebar" id="resultColumn">
+        <section class="panel result-panel panel--sticky">
+          <div class="result-panel__topbar">
             <div>
               <p class="panel__eyebrow">Kết quả</p>
               <h2>Đề xuất tổng hợp</h2>
             </div>
-            <p class="panel__hint">Kết quả cập nhật ngay sau mỗi lần thay đổi hoặc bấm phân tích.</p>
+            <button type="button" class="result-panel__collapse" id="resultPanelToggle" aria-expanded="true" aria-controls="resultPanelBody" aria-label="Thu gọn bảng kết quả">
+              <span class="result-panel__collapse-icon" aria-hidden="true"></span>
+            </button>
           </div>
 
-          <div class="summary-grid">
-            <div class="summary-card">
-              <span>Công suất bù theo MBA</span>
-              <strong id="summaryMbaKvar">--</strong>
+          <div class="result-panel__meta">
+            <div class="result-panel__meta-item">
+              <span>THDi</span>
+              <strong id="sidebarThdi">--</strong>
             </div>
-            <div class="summary-card">
-              <span>Nhu cầu bù theo cosphi</span>
-              <strong id="summaryCosKvar">--</strong>
-            </div>
-            <div class="summary-card">
-              <span>Dung lượng đề xuất</span>
-              <strong id="summaryTotalKvar">--</strong>
-            </div>
-            <div class="summary-card">
-              <span>Cuộn kháng</span>
-              <strong id="summaryReactor">--</strong>
-            </div>
-            <div class="summary-card">
-              <span>AHF</span>
-              <strong id="summaryAhf">--</strong>
-            </div>
-            <div class="summary-card">
-              <span>Điện áp tụ</span>
-              <strong id="summaryCapVoltage">--</strong>
+            <div class="result-panel__meta-item">
+              <span>Giải pháp</span>
+              <strong id="sidebarSolution">--</strong>
             </div>
           </div>
 
-          <div class="result-block">
-            <h3>Chi tiết phân tích</h3>
-            <div id="analysisNarrative" class="narrative"></div>
+          <div class="result-panel__body" id="resultPanelBody">
+            <div class="summary-grid">
+              <div class="summary-card">
+                <span>Công suất bù theo MBA</span>
+                <strong id="summaryMbaKvar">--</strong>
+              </div>
+              <div class="summary-card">
+                <span>Nhu cầu bù theo cosphi</span>
+                <strong id="summaryCosKvar">--</strong>
+              </div>
+              <div class="summary-card">
+                <span>Dung lượng đề xuất</span>
+                <strong id="summaryTotalKvar">--</strong>
+              </div>
+              <div class="summary-card">
+                <span>Cuộn kháng</span>
+                <strong id="summaryReactor">--</strong>
+              </div>
+              <div class="summary-card">
+                <span>AHF</span>
+                <strong id="summaryAhf">--</strong>
+              </div>
+              <div class="summary-card">
+                <span>Điện áp tụ</span>
+                <strong id="summaryCapVoltage">--</strong>
+              </div>
+            </div>
+
+            <div class="result-block">
+              <h3>Phân tích</h3>
+              <div id="analysisNarrative" class="narrative"></div>
+            </div>
+
+            <div class="result-block">
+              <h3>Cảnh báo kỹ thuật</h3>
+              <div id="warningsList" class="warnings"></div>
+            </div>
+
+            <div class="result-block">
+              <h3>Bậc hài ưu thế</h3>
+              <div id="harmonicList" class="harmonic-list"></div>
+            </div>
           </div>
 
-          <div class="result-block">
-            <h3>Cảnh báo kỹ thuật</h3>
-            <div id="warningsList" class="warnings"></div>
-          </div>
-
-          <div class="result-block">
-            <h3>Bậc hài dự đoán</h3>
-            <div id="harmonicList" class="harmonic-list"></div>
+          <div class="result-panel__rail" aria-hidden="true">
+            <span>KQ</span>
           </div>
         </section>
       </aside>
